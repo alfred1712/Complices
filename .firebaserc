@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "juego-cruzado"
-  }
+  },
+  "targets": {
+    "juego-cruzado": {
+      "hosting": {
+        "complices": [
+          "complices-en-juego"
+        ],
+        "legacy-redirect": [
+          "juego-cruzado"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

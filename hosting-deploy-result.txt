@@ -1,3 +1,16 @@
 Despliegue exitoso: 2026-10-28 09:13:29 -03:00
 Proyecto: juego-cruzado
 URL: https://juego-cruzado.web.app
+
+Despliegue exitoso (release confirmado por Firebase CLI): 2026-10-30 12:41:45 -03:00
+Proyecto: juego-cruzado
+Sitio: complices-en-juego
+URL: https://complices-en-juego.web.app
+Verificación HTTP desde este equipo: pendiente; DNS local devolvió Host desconocido.
+
+Redirección de sitio legado desplegada: 2026-10-30 12:49:32 -03:00
+Proyecto: juego-cruzado
+Target: legacy-redirect
+Sitio: juego-cruzado (predeterminado, no eliminable)
+Destino: https://complices-en-juego.web.app
+HTTP verificado: ambos sitios respondieron 200; el legado sirve la página de mudanza.

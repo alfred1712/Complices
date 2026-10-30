@@ -1,4 +1,4 @@
-# Mazo de Chispa
+# Mazo de Cómplices
 
 Exportado desde la versión web. Incluye cartas activas y sus variantes por modalidad.
 

@@ -1,12 +1,22 @@
-# Chispa Web
+# Cómplices Web — publicación
 
-La web comparte el mismo HTML y backend Firebase que el APK. Para desplegarla en Firebase Hosting, desde la raíz del proyecto:
+La guía operativa del MVP, el backend activo, pruebas y recuperación está en [`MVP-OPERATIONS.md`](MVP-OPERATIONS.md).
+
+El proyecto Firebase existente es `juego-cruzado`. La aplicación se publica únicamente en:
+
+- Cómplices: `https://complices-en-juego.web.app` (target `complices`).
+- `https://juego-cruzado.web.app` es el sitio Hosting predeterminado. Firebase no permite borrarlo; se mantiene retirado con una página que redirige a Cómplices (target `legacy-redirect`) y no debe volver a alojar la app.
+
+Desde la raíz, el deploy selectivo es:
 
 ```powershell
-firebase login
-firebase deploy --only hosting
+firebase deploy --only hosting:complices --project juego-cruzado
 ```
 
-La URL inicial será `https://juego-cruzado.web.app` (o el dominio Hosting que figure habilitado en Firebase Console). En Authentication > Settings > Authorized domains, confirma que el dominio publicado esté permitido para inicio de sesión anónimo.
+Solo para actualizar la redirección del dominio anterior:
 
-Las parejas pueden usar el mismo código de sala desde el navegador o el APK. Para invitar, abre la pestaña Sala y comparte el enlace/código generado.
+```powershell
+firebase deploy --only hosting:legacy-redirect --project juego-cruzado
+```
+
+No utilizar `--site`; Firebase CLI selecciona el sitio por deploy target. El deploy de Cómplices no publica reglas ni Functions. Verificar que el nuevo dominio esté autorizado en Authentication antes de validar inicio de sesión.
