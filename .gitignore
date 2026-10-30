@@ -1,0 +1,28 @@
+# Android/Gradle generated files and machine-specific SDK configuration
+android-app/.gradle/
+android-app/.gradle-cache/
+android-app/build/
+android-app/app/build/
+android-app/local.properties
+*.iml
+.idea/
+
+# Firebase local state and credentials
+.firebase/
+.env
+.env.*
+!.env.example
+*-service-account*.json
+service-account*.json
+
+# Generated install packages and local captures/attachments
+*.apk
+*.aab
+.codex-remote-attachments/
+phone-*.png
+mvp-*.png
+Chispa-screen.png
+
+# OS/editor noise
+Thumbs.db
+Desktop.ini

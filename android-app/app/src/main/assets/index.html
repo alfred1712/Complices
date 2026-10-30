@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cómplices — Juego privado en pareja o grupo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        .wildcard-status-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 10px 14px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+        .wildcard-status-panel h3 {
+            font-size: 0.75rem;
+            margin-bottom: 6px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .wildcard-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            justify-content: center;
+        }
+        .wildcard-badge {
+            background: #020617;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #1e293b;
+            color: #cbd5e1;
+        }
+        .wildcard-badge.depleted {
+            opacity: 0.4;
+            border-color: #475569;
+            text-decoration: line-through;
+        }
+
+        :root { --ink:#120d12; --plum:#281822; --wine:#561d37; --wine-deep:#351624; --gold:#d6b36a; --gold-soft:#f1dfb1; --cream:#f5e9d6; }
+        #toastContainer { top:auto!important;bottom:calc(84px + env(safe-area-inset-bottom,0px))!important; }
+        body { background:radial-gradient(ellipse at 50% -10%,#472334 0%,var(--ink) 58%) fixed!important;color:var(--cream)!important; }
+        header { border-color:#70533d!important; }
+        header h1 { color:var(--gold)!important;font-family:Georgia,serif;letter-spacing:.18em; }
+        .bg-slate-950 { background-color:#120d12!important; }
+        .bg-slate-900 { background-color:#261820!important; }
+        .bg-slate-800 { background-color:#402631!important; }
+        .border-slate-800,.border-slate-700 { border-color:#604339!important; }
+        .text-slate-100,.text-white { color:#f7eddd!important; }
+        .text-slate-300,.text-slate-400 { color:#d6c2a9!important; }
+        .text-slate-500,.text-slate-600 { color:#a28772!important; }
+        .text-rose-500,.text-rose-400,.text-rose-300 { color:var(--gold)!important; }
+        .bg-rose-600 { background-color:#782c48!important; }
+        .bg-rose-900\/80 { background-color:#40182b!important; }
+        .border-rose-700\/50 { border-color:#95624b!important; }
+        .bg-gradient-to-r.from-rose-600 { background-image:linear-gradient(110deg,#762b48,#461c32 55%,#a56643)!important; }
+        #cardContainer { border-color:#9d7549!important;box-shadow:0 18px 60px #050306aa,0 0 24px #b8843d22!important; }
+        .deck-illustration { width:100%;height:78px;overflow:hidden;border:1px solid #a77a4938;border-radius:15px;background:#170f15;box-shadow:inset 0 0 24px #d6b36a12; }
+        .deck-illustration svg { display:block;width:100%;height:100%; }
+        #cardArt { height:70px;margin:0 0 15px; }
+        #deckIllustration { height:66px;margin:2px 0 8px;flex:0 0 auto; }
+        button { transition:filter .2s ease,transform .2s ease; }
+        button:hover { filter:brightness(1.12); }
+        .app-tabs { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;max-width:420px;margin:14px auto 0; }
+        .app-tab { border:1px solid #604339;border-radius:14px;background:#241720;color:#cdb79b;padding:10px 8px;font-size:12px;font-weight:800;letter-spacing:.04em; }
+        .app-tab[aria-selected="true"] { background:linear-gradient(130deg,#6f263f,#3a1b2b 65%,#765038);border-color:#d6b36a;color:#f5e9d6;box-shadow:0 5px 18px #0007,inset 0 0 15px #f0cb6622; }
+        .app-tab-panel { width:100%; }
+        .app-tab-panel.hidden { display:none!important; }
+        footer.text-slate-600 { color:#cdb79b!important;padding-bottom:calc(64px + env(safe-area-inset-bottom, 0px))!important;flex-shrink:0; }
+        .roulette-panel { display:flex;align-items:center;gap:18px;padding:15px 14px;margin:0 0 18px;border:1px solid #765038;border-radius:18px;background:radial-gradient(ellipse at 20% 50%,#64263d 0%,#2b1724 50%,#171018 100%);box-shadow:inset 0 0 26px #d6b36a13,0 8px 24px #0007; }
+        .roulette-panel.hidden { display:none!important; }
+        .roulette-wheel { position:relative;width:88px;height:88px;flex:0 0 88px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#f0d798 0 12deg,#30131f 12deg 28deg,#b8794d 28deg 42deg,#25131d 42deg 60deg,#d6b36a 60deg 72deg,#4b1b32 72deg 90deg,#9e5b43 90deg 105deg,#27141f 105deg 120deg,#f0d798 120deg 132deg,#30131f 132deg 150deg,#b8794d 150deg 165deg,#25131d 165deg 180deg,#d6b36a 180deg 192deg,#4b1b32 192deg 210deg,#9e5b43 210deg 225deg,#27141f 225deg 240deg,#f0d798 240deg 252deg,#30131f 252deg 270deg,#b8794d 270deg 285deg,#25131d 285deg 300deg,#d6b36a 300deg 312deg,#4b1b32 312deg 330deg,#9e5b43 330deg 345deg,#27141f 345deg 360deg);border:2px solid #d6b36a;box-shadow:0 0 20px #cf9e5b55,0 0 42px #782c4866,inset 0 0 12px #fff2; }
+        .roulette-wheel::after { content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:7px solid transparent;border-right:7px solid transparent;border-top:15px solid #f3d992;filter:drop-shadow(0 2px 3px #000); }
+        .roulette-wheel.spinning { animation:rouletteSpin 4.4s cubic-bezier(.06,.72,.12,1) forwards,rouletteThrum .48s ease-in-out infinite; }
+        .roulette-core { width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 40% 30%,#643148,#170f15 72%);color:var(--gold-soft);font-size:19px;border:1px solid #f0d798;box-shadow:0 0 14px #e0bb6766; }
+        .roulette-copy { display:flex;flex-direction:column;gap:5px;min-width:0; }
+        .roulette-copy span { font-size:9px;letter-spacing:.2em;color:var(--gold);font-weight:800; }
+        .roulette-copy strong { color:var(--cream);font-family:Georgia,serif;font-size:15px;line-height:1.25; }
+        #rouletteOptionTitle { transition:opacity .15s ease; }
+        @keyframes rouletteSpin { from{transform:rotate(0)} to{transform:rotate(2520deg)} }
+        @keyframes rouletteThrum { 0%,100%{filter:brightness(1);box-shadow:0 0 20px #cf9e5b55,0 0 42px #782c4866,inset 0 0 12px #fff2} 50%{filter:brightness(1.24);box-shadow:0 0 30px #f4d58c99,0 0 58px #a3395caa,inset 0 0 18px #fff5} }
+        @keyframes goldPulse { 0%,100%{box-shadow:0 0 18px #bd884955,inset 0 0 14px #bd884933;border-color:#a67449;filter:saturate(1)} 50%{box-shadow:0 0 42px #edc56b99,0 0 70px #9f315c77,inset 0 0 28px #d6b36a55;border-color:#ffe4a0;filter:saturate(1.2)} }
+        @keyframes highCardReveal { 0%{transform:translateY(10px) scale(.96);opacity:.35} 55%{transform:translateY(-3px) scale(1.015);opacity:1} 100%{transform:translateY(0) scale(1);opacity:1} }
+        .card-high-voltage { position:relative;animation:goldPulse 1.7s ease-in-out infinite,highCardReveal .72s cubic-bezier(.2,.75,.25,1) both!important;background:radial-gradient(ellipse at 80% 0%,#6d2b4833,transparent 55%),linear-gradient(135deg,#331724 0%,#1c111b 100%)!important; }
+        .card-high-voltage::after { content:"✦  NIVEL 3 · ALTO VOLTAJE  ✦";position:absolute;top:-11px;left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 12px;border:1px solid #d6b36a;border-radius:999px;background:#2a1723;color:#f0d798;font-size:9px;font-weight:900;letter-spacing:.16em;box-shadow:0 0 18px #d6b36a66; }
+        @media(prefers-reduced-motion:reduce){.roulette-wheel.spinning{animation-duration:1ms}}
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between p-4 font-sans">
+
+    <div id="adultGate" class="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-5" role="dialog" aria-modal="true" aria-labelledby="adultGateTitle">
+        <div class="w-full max-w-sm rounded-2xl border border-amber-500/50 bg-slate-900 p-6 text-center shadow-2xl">
+            <div class="text-3xl mb-3" aria-hidden="true">🔞</div>
+            <h2 id="adultGateTitle" class="text-xl font-bold text-amber-200">Solo para personas adultas</h2>
+            <p class="mt-3 text-sm leading-relaxed text-slate-300">Cómplices incluye retos y descripciones de contenido sexual explícito. Para continuar, declara que tienes 18 años o más.</p>
+            <button id="adultConfirmBtn" class="mt-5 w-full rounded-xl bg-rose-700 px-4 py-3 font-bold text-white">Tengo 18 años o más · Continuar</button>
+            <button id="adultDenyBtn" class="mt-2 w-full rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-300">No tengo 18 años</button>
+            <p id="adultDeniedMessage" class="mt-3 hidden text-xs text-rose-300">No se puede acceder a Cómplices si eres menor de 18 años.</p>
+        </div>
+    </div>
+
+    <!-- Toast de notificaciones -->
+    <div id="toastContainer" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col gap-2 items-center pointer-events-none w-full px-4" role="status" aria-live="polite" aria-atomic="false"></div>
+
+    <header class="text-center py-4 border-b border-slate-800">
+        <h1 class="text-2xl font-extrabold tracking-wider text-rose-400 uppercase">Cómplices</h1>
+        <p class="text-xs text-slate-400">Solo para mayores de 18 · Pareja o Grupo</p>
+    </header>
+
+    <nav class="app-tabs" role="tablist" aria-label="Secciones del juego">
+        <button class="app-tab" id="tabGameButton" role="tab" aria-selected="true" aria-controls="gameTab" data-tab-target="gameTab">🎡 Juego</button>
+        <button class="app-tab" id="tabRoomButton" role="tab" aria-selected="false" aria-controls="roomTab" data-tab-target="roomTab">⚙️ Ajustes</button>
+        <button class="app-tab" id="tabDataButton" role="tab" aria-selected="false" aria-controls="dataTab" data-tab-target="dataTab">📖 Reglas</button>
+    </nav>
+
+    <main class="flex-1 flex flex-col items-center my-4 max-w-md mx-auto w-full">
+        <section id="gameTab" class="app-tab-panel" role="tabpanel" aria-labelledby="tabGameButton">
+            <div class="bg-slate-900 py-3 px-4 rounded-xl border border-slate-800 mb-3">
+                <div class="mb-2 flex items-center justify-center gap-2 text-[10px] uppercase font-bold tracking-wider">
+                    <span class="text-slate-400">Participantes en esta partida</span>
+                    <span id="connectionStatus" class="text-amber-300" role="status" aria-live="polite">Conectando…</span>
+                </div>
+                <div id="activePlayersList" class="flex flex-wrap justify-center gap-2 text-xs text-slate-300"><span class="text-slate-500 italic">Buscando jugadores...</span></div>
+            </div>
+
+            <div class="flex justify-center items-center gap-2 bg-slate-900 py-2 px-3 rounded-full w-fit mx-auto mb-2 border border-slate-800">
+                <span class="text-xs font-medium text-slate-300">Modo:</span>
+                <select id="gameMode" class="bg-slate-800 text-xs rounded px-2 py-1">
+                    <option value="pareja">Pareja</option>
+                    <option value="grupo">Grupo</option>
+                </select>
+            </div>
+            <p class="text-[10px] text-center text-amber-200/70 mb-3">Al inicio predominan los niveles suaves; Intimidad se incorpora gradualmente.</p>
+
+            <div id="wildcardStatusContainer" class="wildcard-status-panel w-full bg-slate-900 border border-slate-800 rounded-xl p-3 mb-3">
+                <h3>🃏 Comodines disponibles</h3>
+                <div id="wildcardPlayersList" class="wildcard-list"><span class="text-[10px] text-slate-500 italic">Esperando jugadores...</span></div>
+            </div>
+
+            <div id="cardContainer" class="w-full bg-slate-900 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl relative min-h-[220px] flex flex-col justify-between transition-all duration-300">
+                <div id="roulettePanel" class="roulette-panel hidden" aria-live="polite"><div id="rouletteWheel" class="roulette-wheel"><div class="roulette-core">✦</div></div><div class="roulette-copy"><span>NIVEL Y CARTA AL AZAR</span><strong id="rouletteOptionTitle">Preparando la ruleta…</strong></div></div>
+                <div id="cardArt" class="deck-illustration" aria-hidden="true"></div>
+                <div>
+                    <span id="cardLevel" class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Listos para jugar</span>
+                    <h2 id="cardTitle" class="text-lg font-bold text-white mt-3">¡Que empiece el juego!</h2>
+                    <p id="cardDrawnBy" class="text-[10px] text-slate-500 mt-1 hidden"></p>
+                </div>
+                <p id="cardDescription" class="text-sm text-slate-300 my-4 leading-relaxed">Giren la ruleta y dejen que la sala decida el reto.</p>
+                <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800 pt-3">
+                    <span id="cardType" class="font-semibold text-rose-400">Mazo compartido</span>
+                </div>
+            </div>
+
+            <div id="actionButtonsContainer" class="w-full mt-3 flex gap-2 hidden">
+                <button id="successBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-2 rounded-xl shadow-lg transition-transform active:scale-95 text-xs tracking-wide uppercase">✅ Finalizar turno</button>
+                <button id="failBtn" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-3 px-2 rounded-xl shadow-lg transition-transform active:scale-95 text-xs tracking-wide uppercase border border-slate-700">↪ Omitir y seguir</button>
+            </div>
+
+            <p id="drawHint" class="text-center text-xs uppercase tracking-[.18em] text-amber-200 mt-4 mb-2">Dale a «Girar la ruleta» para descubrir la carta</p>
+            <button id="drawBtn" class="w-full bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95 text-base tracking-wide uppercase disabled:opacity-50 disabled:cursor-not-allowed">🎡 Girar la ruleta</button>
+            <button id="wildcardBtn" class="w-full mt-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 text-xs font-bold py-3 rounded-xl transition">🃏 Usar comodín</button>
+        </section>
+
+        <section id="roomTab" class="app-tab-panel hidden" role="tabpanel" aria-labelledby="tabRoomButton">
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-3">Código de la sala</h2>
+                <p class="text-xs text-slate-400 mb-3">Comparte la invitación para que los demás entren a esta misma partida desde sus dispositivos, o ingresa el código de 12 caracteres.</p>
+                <div class="flex flex-wrap justify-center items-center gap-2">
+                    <span id="roomLabel" class="text-xs text-slate-300 font-bold">Sala: conectando…</span>
+                    <input id="roomCodeInput" maxlength="12" placeholder="Código de sala" aria-label="Código de sala" class="w-32 bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-xs uppercase">
+                    <button id="joinRoomBtn" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-rose-300">Usar sala</button>
+                </div>
+                <button id="createRoomBtn" class="w-full mt-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-amber-200">📤 Compartir invitación</button>
+                <button id="newRoomBtn" class="w-full mt-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">✨ Crear una sala nueva</button>
+            </div>
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Intensidad máxima</h2>
+                <select id="intensityLimit" aria-label="Intensidad máxima de las cartas" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100">
+                    <option value="1">Suave · hasta Nivel 1</option>
+                    <option value="2">Media · hasta Nivel 2</option>
+                    <option value="3">Completa · hasta Nivel 3</option>
+                </select>
+                <p id="intensityHelp" class="text-[11px] text-slate-400 mt-2 leading-relaxed">La ruleta elige al azar entre los niveles habilitados y aumenta la intensidad gradualmente. Es un ajuste común para toda la sala y se fija al comenzar.</p>
+            </div>
+            <div id="setupBox" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-3">Tu nombre en este teléfono</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="playerNameInput" placeholder="Tu nombre" aria-label="Tu nombre de jugador" class="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-rose-500">
+                    <button id="savePlayerBtn" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2 rounded-lg">Guardar</button>
+                </div>
+                <p id="currentPlayerDisplay" class="text-xs text-rose-300 mt-3 font-semibold">Jugador en este teléfono: Ninguno configurado</p>
+            </div>
+            <p class="text-[11px] text-center text-slate-500 leading-relaxed">Solo mayores de 18. Se puede pasar cualquier carta sin explicaciones ni penalización.</p>
+        </section>
+
+        <section id="dataTab" class="app-tab-panel hidden" role="tabpanel" aria-labelledby="tabDataButton">
+            <div class="w-full bg-slate-900 p-4 rounded-xl border border-slate-800 mb-3">
+                <div class="flex justify-between text-center mb-3">
+                    <div><span class="text-[10px] text-slate-400 uppercase tracking-wider block">Turnos finalizados · opcional</span><span id="sharedCount" class="text-xl font-bold text-rose-400">0</span></div>
+                    <div><span class="text-[10px] text-slate-400 uppercase tracking-wider block">Cartas restantes</span><span id="cardsLeft" class="text-xl font-bold text-slate-300">0</span></div>
+                </div>
+                <p class="text-[10px] text-center text-slate-500 mb-3">Solo un registro del juego; no hay puntos, clasificación ni consecuencias.</p>
+                <div class="w-full bg-slate-950 rounded-full h-1.5 border border-slate-800 overflow-hidden"><div id="deckProgressBar" class="h-full bg-gradient-to-r from-rose-600 to-red-500 transition-all duration-300" style="width:0%"></div></div>
+                <span id="deckProgressLabel" class="text-[10px] text-slate-500 block text-center mt-1">0 jugadas</span>
+            </div>
+            <div class="grid grid-cols-1 gap-2">
+                <button id="historyBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-300 text-xs font-bold py-3 rounded-xl">📜 Ver historial</button>
+                <button id="rulesBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-sky-300 text-xs font-bold py-3 rounded-xl">📖 Reglas del juego</button>
+                <button id="viewDeckBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-rose-300 text-xs font-bold py-3 rounded-xl">🎴 Ver todas las cartas del mazo</button>
+                <button id="resetBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 text-xs font-bold py-3 rounded-xl">🔄 Reiniciar partida en la nube</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Historial -->
+    <div id="historyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 max-h-[85vh] overflow-y-auto flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="text-base font-bold text-amber-400 uppercase tracking-wider">Historial de Retos</h3>
+                <button id="closeHistoryBtn" class="text-slate-400 hover:text-white font-bold text-lg" aria-label="Cerrar historial">✕</button>
+            </div>
+            <div id="historyListContainer" class="space-y-2 text-xs text-slate-300 flex-1 overflow-y-auto pr-1">
+                <p class="text-center text-slate-500 italic py-4">No hay cartas jugadas aún.</p>
+            </div>
+            <button id="closeHistoryFooter" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Reglas -->
+    <div id="rulesModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="text-base font-bold text-rose-500 uppercase tracking-wider">Reglas de Cómplices</h3>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-white font-bold text-lg" aria-label="Cerrar reglas">✕</button>
+            </div>
+            <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+                <p><b>🔞 Solo para adultos:</b> Cómplices está destinada exclusivamente a personas de 18 años o más y contiene cartas de temática sexual explícita.</p>
+                <p><b>👥 Modalidad:</b> Pareja o grupo de participantes adultos.</p>
+                <p><b>🛑 Ritmo del juego:</b> Empiecen y cierren la partida en la misma jornada; ningún reto queda pendiente para otro día. Si un niño interrumpe, pausen para atenderlo y retomen solo cuando vuelvan a tener privacidad. Si no pueden seguir hoy, cierren la partida. Paso Libre permite omitir una carta sin penalización.</p>
+                <p><b>🔥 Nivel 3:</b> Si el reto nombra una zona desnuda o expuesta y aún está cubierta, quien recibe o quien realiza la acción la descubre en ese turno.</p>
+                <p><b>✨ Elección de zonas:</b> Cuando una carta permite elegir dónde besar o acariciar, la zona queda a elección de quienes juegan; las zonas nombradas son ideas, no límites.</p>
+                <p><b>🔒 Privacidad y contenido multimedia:</b> Cómplices no tiene chat ni permite subir, enviar o guardar fotos, audios o videos. La sala sincroniza el código, los nombres visibles, el modo, las cartas y el historial del juego en Firebase. Si deciden compartir contenido multimedia, háganlo fuera de Cómplices por el canal privado que elijan; la app no lo recibe ni lo almacena.</p>
+                <p><b>🟢 Indicador Activo:</b> Ve qué dispositivos están en línea en tiempo real desde el encabezado.</p>
+                <p><b>🃏 Comodín:</b> Cada jugador dispone de comodines para cambiar o pasar una carta. No hay penalización.</p>
+                <p><b>✨ Registro opcional:</b> El contador solo recuerda cuántos turnos marcaron como finalizados. No suma puntos ni determina ganadores.</p>
+            </div>
+            <button id="closeModalFooter" class="mt-6 w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal de Cartas del Mazo -->
+    <div id="deckModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 h-[80vh] max-h-[800px] overflow-hidden flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="text-base font-bold text-rose-400 uppercase tracking-wider">🎴 Mazos compartidos</h3>
+                <button id="closeDeckBtn" class="text-slate-400 hover:text-white font-bold text-lg" aria-label="Cerrar catálogo">✕</button>
+            </div>
+            <label for="deckLevelSelect" class="text-[10px] font-bold uppercase tracking-wider text-amber-200 mb-1">Elige un nivel</label>
+            <select id="deckLevelSelect" class="w-full bg-slate-950 border border-amber-900/70 rounded-xl px-3 py-3 text-sm text-amber-100 mb-2 focus:outline-none focus:border-amber-400">
+                <option value="coqueteo">Nivel 1 · Coqueteo</option>
+                <option value="sensaciones">Nivel 2 · Sensaciones</option>
+                <option value="intimidad">Nivel 3 · Intimidad</option>
+            </select>
+            <div id="deckIllustration" class="deck-illustration" aria-hidden="true"></div>
+            <p id="deckListSummary" class="text-[10px] text-slate-400 mb-3"></p>
+            <div id="deckListContainer" class="space-y-2 text-xs text-slate-300 flex-1 min-h-0 overflow-y-auto pr-1">
+                <!-- Se llena dinámicamente -->
+            </div>
+            <button id="closeDeckFooter" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase">
+                Cerrar
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-[10px] text-slate-600 py-2">
+        Cómplices • Una experiencia a su ritmo
+    </footer>
+
+    <script>
+        // ============================================================
+        // Configuración de Firebase
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBYXICYKd8lJLwwgSLR3-KIsfFiyvmyFiU",
+            authDomain: "juego-cruzado.firebaseapp.com",
+            databaseURL: "https://juego-cruzado-default-rtdb.firebaseio.com",
+            projectId: "juego-cruzado",
+            storageBucket: "juego-cruzado.firebasestorage.app",
+            messagingSenderId: "76826915440",
+            appId: "1:76826915440:web:aab5727144c4a038cc3ab5",
+            measurementId: "G-GC2QYZM7GY"
+        };
+
+        const adultGate = document.getElementById('adultGate');
+        const adultConfirmBtn = document.getElementById('adultConfirmBtn');
+        const adultDenyBtn = document.getElementById('adultDenyBtn');
+        const adultDeniedMessage = document.getElementById('adultDeniedMessage');
+        let adultConfirmationReady;
+        try {
+            if (sessionStorage.getItem('chispa_adult_confirmed') === 'yes') {
+                adultGate.classList.add('hidden');
+                adultConfirmationReady = Promise.resolve();
+            }
+        } catch {}
+        if (!adultConfirmationReady) {
+            adultConfirmationReady = new Promise(resolve => {
+                adultConfirmBtn.addEventListener('click', () => {
+                    try { sessionStorage.setItem('chispa_adult_confirmed', 'yes'); } catch {}
+                    adultGate.classList.add('hidden');
+                    resolve();
+                }, { once: true });
+                adultDenyBtn.addEventListener('click', () => adultDeniedMessage.classList.remove('hidden'));
+            });
+        }
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const authReady = adultConfirmationReady.then(() => auth.signInAnonymously());
+        const db = firebase.database();
+
+        function newRoomCode() {
+            const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            const random = new Uint8Array(12);
+            crypto.getRandomValues(random);
+            return Array.from(random, byte => alphabet[byte % alphabet.length]).join('');
+        }
+
+        const roomParam = new URLSearchParams(location.search).get('sala');
+        const savedRoomCode = localStorage.getItem('chispa_room') || '';
+        const requestedRoomCode = (roomParam || savedRoomCode).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+        const pendingRoomCode = localStorage.getItem('chispa_pending_room') || '';
+        const isPendingNewRoom = Boolean(pendingRoomCode && pendingRoomCode === requestedRoomCode);
+        const hasExplicitRoom = Boolean(roomParam || savedRoomCode) && !isPendingNewRoom;
+        const invalidRequestedRoom = hasExplicitRoom && !/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{12}$/.test(requestedRoomCode);
+        let roomCode = invalidRequestedRoom ? newRoomCode() : requestedRoomCode;
+        if (!roomCode || roomCode === 'PUBLICA') roomCode = newRoomCode();
+        if (!invalidRequestedRoom) localStorage.setItem('chispa_room', roomCode);
+        const roomLabel = document.getElementById('roomLabel');
+        roomLabel.textContent = invalidRequestedRoom ? 'Código de sala inválido' : `Sala: ${roomCode}`;
+        document.getElementById('roomCodeInput').value = invalidRequestedRoom ? '' : roomCode;
+        const roomRoot = `salas/${roomCode}`;
+        const memberRef = db.ref(`${roomRoot}/miembros`);
+        const deckLabels = { coqueteo: '❤️ Coqueteo', sensaciones: '🔥 Sensaciones', intimidad: '💜 Intimidad' };
+        const legacyGameRefs = Object.fromEntries(Object.keys(deckLabels).map(deckId => [deckId, db.ref(`${roomRoot}/mazos/${deckId}/gameData`)]));
+        const gameRef = db.ref(`${roomRoot}/gameData`);
+        const presenceRef = db.ref(`${roomRoot}/presences`);
+        const connectionRef = db.ref('.info/connected');
+
+        const LIMITE_COMODINES = 2;
+
+        // ============================================================
+        // Mazo
+        // ============================================================
+        const legacyDeck = [
+            // Nivel 1 (Preludio)
+            { id: 1, level: "Nivel 1: Coqueteo", title: "Un detalle", desc: "Dile a tu acompañante qué detalle suyo te resulta irresistible. En grupo, elige a otra persona participante.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 2, level: "Nivel 1: Coqueteo", title: "Frase coqueta", desc: "Dile una frase coqueta a tu acompañante; en grupo, elige a otra persona participante.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 3, level: "Nivel 1: Coqueteo", title: "Beso a elección", desc: "Comparte un beso breve con tu acompañante. En grupo, elige a otra persona participante.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 4, level: "Nivel 1: Coqueteo", title: "Tres cosas", desc: "Nombra tres cosas que te gustaría probar en una cita.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 5, level: "Nivel 1: Coqueteo", title: "Mirada", desc: "Sostén la mirada de tu acompañante cinco segundos y terminen con un beso breve.", points: 1, type: "Nivel 1", mode: "pareja" },
+            { id: 6, level: "Nivel 1: Coqueteo", title: "Fantasía ligera", desc: "Cuenta una fantasía sensual breve y represéntenla ahora con un beso o una caricia.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 7, level: "Nivel 1: Coqueteo", title: "Playlist", desc: "Elige una canción que te ponga de buen humor para seducir y explica por qué.", points: 1, type: "Nivel 1", mode: "both" },
+            { id: 8, level: "Nivel 1: Coqueteo", title: "Un deseo", desc: "Pídele a tu pareja un gesto cariñoso concreto: un abrazo, una caricia en la mano o un cumplido.", points: 1, type: "Nivel 1", mode: "pareja" },
+
+            // Nivel 2 (Temperatura Media)
+            { id: 9, level: "Nivel 2: Más cerca", title: "Masaje lento", desc: "Da un masaje de hombros de dos minutos, alternando presión suave y firme.", points: 3, type: "Nivel 2", mode: "both" },
+            { id: 10, level: "Nivel 2: Más cerca", title: "Baile privado", desc: "Haz un baile sensual y silencioso para tu acompañante durante 20 segundos.", points: 3, type: "Nivel 2", mode: "pareja" },
+            { id: 11, level: "Nivel 2: Más cerca", title: "Beso lento", desc: "Comparte un beso lento de 20 segundos con tu acompañante.", groupDesc: "En modo grupo, elige a otra persona participante para un beso lento de 20 segundos.", points: 3, type: "Nivel 2", mode: "both" },
+            { id: 12, level: "Nivel 2: Más cerca", title: "Guía de caricias", desc: "Por turnos, guía las manos de tu pareja por las zonas que más disfrutas y déjate guiar por ella.", points: 3, type: "Nivel 2", mode: "pareja" },
+            { id: 13, level: "Nivel 2: Más cerca", title: "Confesión", desc: "Cuéntale a tu pareja qué tipo de foto, audio o mensaje íntimo que te envió alguien fuera de la relación te excitó más y qué te gustaría recibir; no hace falta mostrarlo.", groupDesc: "En modo grupo, elige a alguien del otro lado: que cuente qué contenido íntimo recibido de otra persona participante le excitó más y qué le gustaría recibir; sin mostrarlo ni reenviarlo.", points: 3, type: "Nivel 2", mode: "both" },
+            { id: 14, level: "Nivel 2: Más cerca", title: "Una prenda menos", desc: "Quien roba elige una prenda para quitarse ahora o le pide a su acompañante que elija una.", groupDesc: "En modo grupo, quien roba elige a otra persona participante; esa persona decide y se quita una prenda.", points: 3, type: "Nivel 2", mode: "both" },
+            { id: 15, level: "Nivel 2: Más cerca", title: "Mordida suave", desc: "Besa el cuello o el hombro de tu acompañante y termina con una mordida suave.", groupDesc: "En modo grupo, elige a otra persona participante para besarle suavemente el cuello o el hombro.", points: 3, type: "Nivel 2", mode: "both" },
+            { id: 16, level: "Nivel 2: Más cerca", title: "Fantasía en acción", desc: "Quien roba cuenta una fantasía que le gustaría cumplir hoy. Su pareja dice si le gustaría hacerla y eligen una parte para poner en práctica ahora.", groupDesc: "En modo grupo, alguien comparte una fantasía que quisiera cumplir hoy; su pareja responde si le gustaría hacerla y eligen una parte para realizar ahora.", points: 3, type: "Nivel 2", mode: "both" },
+
+            // Nivel 3 (Alto Voltaje)
+            { id: 17, level: "Nivel 3: Alto Voltaje", title: "Beso cruzado a elección", desc: "Elige una zona erógena de tu pareja y bésala durante 20 segundos.", groupDesc: "En grupo, elige a otra persona participante y dale un beso en la zona erógena que indique durante 20 segundos.", points: 5, type: "Nivel 3", mode: "both" },
+            { id: 18, level: "Nivel 3: Alto Voltaje", title: "Caricia íntima cruzada", desc: "Tu acompañante se quita una prenda y recibe 30 segundos de caricias directas en una zona íntima expuesta.", groupDesc: "En grupo, quien recibe elige una prenda para quitarse y otra persona participante acaricia directamente una zona íntima expuesta durante 30 segundos.", points: 5, type: "Nivel 3", mode: "both" },
+            { id: 19, level: "Nivel 3: Alto Voltaje", title: "Sexo oral cruzado", desc: "Dale a tu acompañante una ronda breve de estimulación oral genital.", groupDesc: "En grupo, intercambien acompañantes y realicen una ronda breve de estimulación oral genital.", points: 5, type: "Nivel 3", mode: "both" },
+            { id: 20, level: "Nivel 3: Alto Voltaje", title: "Manos cruzadas", desc: "Quítale una prenda a tu acompañante y acaricia directamente con la mano una zona íntima expuesta durante 30 segundos.", groupDesc: "En grupo, otra persona participante elige a quién quitarle una prenda y acaricia directamente una zona íntima expuesta durante 30 segundos.", points: 5, type: "Nivel 3", mode: "both" },
+            { id: 21, level: "Nivel 3: Alto Voltaje", title: "Felación con intercambio", desc: "En grupo, intercambien acompañantes; quien roba realiza una felación breve a la persona elegida. Si no aplica, hagan una caricia oral genital equivalente.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 22, level: "Nivel 3: Alto Voltaje", title: "Desvestir y besar", desc: "En grupo, otra persona participante elige una prenda para que te quites; luego te da un beso en una zona erógena que tú señales.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 23, level: "Nivel 3: Alto Voltaje", title: "Felación por turnos", desc: "Quien roba realiza una felación breve a su pareja durante 20 segundos, siguiendo lo que prefiera quien recibe.", groupDesc: "En modo grupo, quien roba elige a otra persona participante y realiza una felación breve durante 20 segundos, siguiendo sus preferencias.", points: 5, type: "Nivel 3", mode: "both" },
+            { id: 24, level: "Nivel 3: Alto Voltaje", title: "Beso y caricia a cuatro", desc: "En grupo, elijan a otra persona participante para un beso y caricias íntimas por encima de la ropa durante 30 segundos; sin música.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 25, level: "Nivel 3: Alto Voltaje", title: "Intercambio express", desc: "En grupo, cambien de acompañante durante un minuto y compartan besos y caricias íntimas por encima o debajo de la ropa.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 26, level: "Nivel 3: Alto Voltaje", title: "Caricia oral guiada", desc: "En grupo, una persona indica qué zona erógena quiere recibir una caricia oral breve de otra persona participante.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 27, level: "Nivel 3: Alto Voltaje", title: "Manos bajo la ropa", desc: "En grupo, intercambien acompañantes y exploren con las manos una zona íntima elegida por quien recibe durante 30 segundos.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 28, level: "Nivel 3: Alto Voltaje", title: "Besos erógenos cruzados", desc: "En grupo, una persona elige una zona erógena para su acompañante; otra persona participante la besa durante 20 segundos.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 29, level: "Nivel 3: Alto Voltaje", title: "Ronda de sexo oral", desc: "En grupo, cada quien elige a otra persona participante para una ronda breve de sexo oral o caricias genitales.", points: 5, type: "Nivel 3", mode: "grupo" },
+            { id: 30, level: "Nivel 3: Alto Voltaje", title: "Encuentro cruzado", desc: "En grupo, intercambien acompañantes e inicien durante un minuto una actividad sexual que elijan en el momento.", points: 5, type: "Nivel 3", mode: "grupo" },
+
+            // Comodines
+            { id: 31, level: "Comodines", title: "Paso libre", desc: "Pasa cualquier carta sin dar explicaciones y roba otra o termina el turno. No hay penalización.", points: 0, type: "Comodín", mode: "both" },
+            { id: 32, level: "Comodines", title: "A mi manera", desc: "Cambia el reto por una versión más cómoda o menos intensa que elijas.", points: 0, type: "Comodín", mode: "both" },
+            { id: 33, level: "Comodines", title: "Cambio de turno", desc: "Descarta la carta y pasa el turno. Nadie recibe el reto por otra persona.", points: 0, type: "Comodín", mode: "both" },
+            { id: 34, level: "Comodines", title: "Pausa familiar", desc: "Usa esta pausa solo si un niño interrumpe y necesita atención. Atiéndanlo y retomen únicamente cuando vuelvan a tener privacidad, dentro de esta misma jornada.", points: 0, type: "Comodín", mode: "both" }
+        ];
+        const suppliedDeckCards = [
+            // Mazo 1 — Coqueteo
+            { id:101, deckId:'coqueteo', level:'Coqueteo', title:'Mirada y caricias', desc:'Mírense 5 segundos; quien roba la carta acaricia la nuca de su pareja.', groupDesc:'En modo grupo, quien roba elige a otra persona del grupo, cruzan una mirada breve y le acaricia la nuca.', points:1, type:'Nivel 1', mode:'both' },
+            { id:102, deckId:'coqueteo', level:'Coqueteo', title:'Tres besos en el cuello', desc:'Da tres besos lentos en el cuello de tu pareja.', groupDesc:'En modo grupo, elige a otra persona del grupo y dale tres besos lentos en el cuello.', points:1, type:'Nivel 1', mode:'both' },
+            { id:103, deckId:'coqueteo', level:'Coqueteo', title:'Dedos por la clavícula', desc:'Recorre la clavícula de tu pareja con las yemas de los dedos y termina con un beso.', groupDesc:'En modo grupo, recorre con los dedos la clavícula de otra persona del grupo y termina con un beso breve.', points:1, type:'Nivel 1', mode:'both' },
+            { id:104, deckId:'coqueteo', level:'Coqueteo', title:'Masaje de hombros', desc:'Quien roba la carta da a su pareja un masaje breve de hombros y nuca; puede añadir libremente otra caricia o acción breve.', groupDesc:'En modo grupo, quien roba puede elegir a otra persona del grupo para el masaje de hombros y nuca, y sumar libremente otra caricia o acción breve.', points:1, type:'Nivel 1', mode:'both' },
+            { id:105, deckId:'coqueteo', level:'Coqueteo', title:'Beso en la clavícula', desc:'Besa lentamente la clavícula de tu pareja y acaricia su hombro.', groupDesc:'En modo grupo, elige a otra persona del grupo: un beso en la clavícula y una caricia en el hombro.', points:1, type:'Nivel 1', mode:'both' },
+            { id:106, deckId:'coqueteo', level:'Coqueteo', title:'Caricias por la espalda', desc:'Pasa las manos por la espalda de tu pareja sobre la ropa durante 20 segundos.', groupDesc:'En modo grupo, acaricia durante 20 segundos la espalda de otra persona del grupo por encima de la ropa.', points:1, type:'Nivel 1', mode:'both' },
+            { id:107, deckId:'coqueteo', level:'Coqueteo', title:'Detrás de la oreja', desc:'Acaricia detrás de la oreja y por el cuello de tu pareja; termina con un beso.', groupDesc:'En modo grupo, acaricia detrás de la oreja y el cuello de otra persona del grupo y termina con un beso breve.', points:1, type:'Nivel 1', mode:'both' },
+            { id:108, deckId:'coqueteo', level:'Coqueteo', title:'Caricias por el brazo', desc:'Recorre el brazo de tu pareja desde el hombro hasta la mano con toques lentos.', groupDesc:'En modo grupo, recorre lentamente el brazo de otra persona del grupo desde el hombro hasta la mano.', points:1, type:'Nivel 1', mode:'both' },
+            { id:109, deckId:'coqueteo', level:'Coqueteo', title:'Besos en la mano', desc:'Besa la mano de tu pareja, desde las puntas de los dedos hasta la muñeca y el antebrazo.', groupDesc:'En modo grupo, elige a otra persona del grupo y besa su mano, muñeca y antebrazo hasta cerca del codo.', points:1, type:'Nivel 1', mode:'both' },
+            { id:110, deckId:'coqueteo', level:'Coqueteo', title:'Beso y manos inquietas', desc:'Quien roba la carta comparte un beso breve con su pareja mientras acaricia su cintura y muslos por encima de la ropa durante 20 segundos.', groupDesc:'En modo grupo, elige a otra persona del grupo para un beso breve y caricias en cintura y muslos por encima de la ropa durante 20 segundos.', points:1, type:'Nivel 1', mode:'both' },
+            { id:111, deckId:'coqueteo', level:'Coqueteo', title:'Caricias con algo de casa', desc:'Usa una camiseta limpia, una toalla suave o una funda de almohada para acariciar cuello, hombros o brazos de tu pareja.', groupDesc:'En modo grupo, usa una camiseta limpia, una toalla suave o una funda de almohada para acariciar cuello, hombros o brazos de otra persona del grupo.', points:1, type:'Nivel 1', mode:'both' },
+            { id:112, deckId:'coqueteo', level:'Coqueteo', title:'Abrazo por detrás', desc:'Abraza a tu pareja por detrás, acaríciale la cintura y bésale el cuello.', groupDesc:'En modo grupo, abraza por detrás a otra persona del grupo, acaríciale la cintura y dale un beso en el cuello.', points:1, type:'Nivel 1', mode:'both' },
+            { id:113, deckId:'coqueteo', level:'Coqueteo', title:'Beso en la cintura', desc:'Besa la cintura de tu pareja por encima de la ropa y deja ahí las manos unos segundos.', groupDesc:'En modo grupo, besa la cintura por encima de la ropa de otra persona del grupo y acaríciala unos segundos.', points:1, type:'Nivel 1', mode:'both' },
+            { id:114, deckId:'coqueteo', level:'Coqueteo', title:'Manos sobre la ropa', desc:'Recorre con las manos el torso de tu pareja por encima de la ropa durante 20 segundos.', groupDesc:'En modo grupo, recorre durante 20 segundos el torso de otra persona del grupo por encima de la ropa.', points:1, type:'Nivel 1', mode:'both' },
+            { id:115, deckId:'coqueteo', level:'Coqueteo', title:'Guía mis manos', desc:'Guía las manos de tu pareja por las zonas de tu cuerpo que quieres que acaricie, por encima de la ropa.', groupDesc:'En modo grupo, guía las manos de otra persona del grupo hacia una zona que quieras que acaricie por encima de la ropa.', points:1, type:'Nivel 1', mode:'both' },
+            { id:116, deckId:'coqueteo', level:'Coqueteo', title:'Masaje de muslos', desc:'Da a tu pareja un masaje breve en los muslos por encima de la ropa.', groupDesc:'En modo grupo, da a otra persona del grupo un masaje breve en los muslos por encima de la ropa.', points:1, type:'Nivel 1', mode:'both' },
+            { id:117, deckId:'coqueteo', level:'Coqueteo', title:'Beso del hombro al cuello', desc:'Besa despacio a tu pareja desde el hombro hasta el cuello.', groupDesc:'En modo grupo, elige a otra persona del grupo y dale un beso desde el hombro hasta el cuello.', points:1, type:'Nivel 1', mode:'both' },
+            { id:118, deckId:'coqueteo', level:'Coqueteo', title:'Tres besos, tres caricias', desc:'Da tres besos en distintas zonas del cuello y acompaña cada uno con una caricia.', groupDesc:'En modo grupo, comparte con otra persona del grupo tres besos y caricias breves en cuello y hombros.', points:1, type:'Nivel 1', mode:'both' },
+            { id:119, deckId:'coqueteo', level:'Coqueteo', title:'Cuerpos muy cerca', desc:'Acércate a tu pareja, pon las manos en su cintura y bésense durante 20 segundos.', groupDesc:'En modo grupo, elige a otra persona del grupo: acérquense, manos a la cintura y un beso de 20 segundos.', points:1, type:'Nivel 1', mode:'both' },
+            { id:120, deckId:'coqueteo', level:'Coqueteo', title:'Elige dónde acariciar', desc:'Tu pareja indica una zona cómoda para recibir 20 segundos de caricias.', groupDesc:'En modo grupo, quien roba elige a otra persona del grupo; esa persona señala una zona para recibir 20 segundos de caricias.', points:1, type:'Nivel 1', mode:'both' },
+
+            { id:161, deckId:'coqueteo', level:'Coqueteo', title:'Caricia cruzada', desc:'En modo grupo, cada persona elige a alguien del otro lado y le da una caricia lenta durante 15 segundos en el cuello, pecho, espalda o muslos; quien recibe escoge la zona.', points:1, type:'Nivel 1', mode:'grupo' },
+            { id:162, deckId:'coqueteo', level:'Coqueteo', title:'Beso de bienvenida', desc:'En modo grupo, cada persona da un beso breve en la mejilla o el cuello a quien tiene enfrente.', points:1, type:'Nivel 1', mode:'grupo' },
+            { id:163, deckId:'coqueteo', level:'Coqueteo', title:'Cinturas cerca', desc:'En modo grupo, quien roba elige a otra persona participante; quien recibe elige entre un beso en los labios, el cuello o el escote y lo comparten durante 10 segundos.', points:1, type:'Nivel 1', mode:'grupo' },
+            { id:164, deckId:'coqueteo', level:'Coqueteo', title:'Rompe el hielo', desc:'En modo grupo, elige a alguien del otro lado y compartan un beso en los labios de 5 segundos; después, cada quien elige una zona para una caricia breve.', points:1, type:'Nivel 1', mode:'grupo' },
+            { id:165, deckId:'coqueteo', level:'Coqueteo', title:'Beso por turnos', desc:'En modo grupo, elige a otra persona y dale un beso breve en los labios, el cuello, el escote o la cara interna del muslo; quien recibe escoge dónde.', points:1, type:'Nivel 1', mode:'grupo' },
+            { id:166, deckId:'coqueteo', level:'Coqueteo', title:'Acércate', desc:'En modo grupo, cada dúo se acerca y comparte 10 segundos de caricias por encima de la ropa.', points:1, type:'Nivel 1', mode:'grupo' },
+
+            // Mazo 2 — Sensaciones
+            { id:121, deckId:'sensaciones', level:'Sensaciones', title:'Manos que exploran', desc:'Quien roba elige una zona del cuerpo de su pareja —incluida una zona erógena— o deja que quien recibe la elija; recórranla con las manos durante 20 segundos.', groupDesc:'En modo grupo, quien roba o quien recibe elige cualquier zona del cuerpo, incluida una zona erógena; recórranla con las manos durante 20 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:122, deckId:'sensaciones', level:'Sensaciones', title:'Yemas y escalofrío', desc:'Quien recibe elige una zona del cuerpo y quien roba la recorre lentamente con las yemas de los dedos durante 15 segundos.', groupDesc:'En modo grupo, elige a otra persona participante: quien recibe decide la zona y quien roba la recorre con las yemas de los dedos durante 15 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:123, deckId:'sensaciones', level:'Sensaciones', title:'Contacto provocador', desc:'Quien roba elige una opción y la realiza con su pareja durante 15 segundos: besarle el escote, besar la cara interna de sus muslos o pegar la pelvis a sus nalgas.', groupDesc:'En modo grupo, quien roba elige a otra persona y una opción: besarle el escote, besar la cara interna de sus muslos o pegar la pelvis a sus nalgas durante 15 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:124, deckId:'sensaciones', level:'Sensaciones', title:'Ojos cerrados', desc:'Tu pareja cierra los ojos 10 segundos mientras le das una caricia o un beso sorpresa.', groupDesc:'En modo grupo, otra persona participante cierra los ojos 10 segundos mientras recibe una caricia o un beso sorpresa.', points:3, type:'Nivel 2', mode:'both' },
+            { id:125, deckId:'sensaciones', level:'Sensaciones', title:'Adivina quién', desc:'Tu pareja cierra los ojos; quien roba elige una zona del cuerpo para un beso o una caricia breve. Quien recibe adivina la zona.', groupDesc:'Quien recibe cierra los ojos. Una persona participante elegida por quien roba da un beso o una caricia en la zona que elija quien roba; quien recibe adivina quién fue.', points:3, type:'Nivel 2', mode:'both' },
+            { id:126, deckId:'sensaciones', level:'Sensaciones', title:'Caricia lenta', desc:'Desliza una mano lentamente por el costado de tu pareja por encima de la ropa.', groupDesc:'En modo grupo, desliza una mano lentamente por el costado de otra persona participante, por encima de la ropa.', points:3, type:'Nivel 2', mode:'both' },
+            { id:127, deckId:'sensaciones', level:'Sensaciones', title:'Beso y susurro', desc:'Da un beso breve donde elija tu pareja y susúrrale una frase provocadora.', groupDesc:'En modo grupo, da un beso breve donde elija otra persona participante y susúrrale una frase provocadora.', points:3, type:'Nivel 2', mode:'both' },
+            { id:128, deckId:'sensaciones', level:'Sensaciones', title:'Piel con piel', desc:'Quien recibe elige una zona de piel expuesta; quien roba la acaricia con la palma y las yemas de los dedos durante 20 segundos.', groupDesc:'En modo grupo, elige a otra persona participante; quien recibe descubre y elige una zona y quien roba la acaricia piel con piel durante 20 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:129, deckId:'sensaciones', level:'Sensaciones', title:'Dedos por la cintura', desc:'Acaricia la cintura de tu pareja con las yemas de los dedos durante 15 segundos.', groupDesc:'En modo grupo, acaricia la cintura de otra persona participante con las yemas de los dedos durante 15 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:130, deckId:'sensaciones', level:'Sensaciones', title:'Balanceo silencioso', desc:'Abrácense y balanceen juntos durante 15 segundos, sin música ni hablar.', groupDesc:'En modo grupo, abraza a otra persona participante y balancéense juntos durante 15 segundos, sin música ni hablar.', points:3, type:'Nivel 2', mode:'both' },
+            { id:131, deckId:'sensaciones', level:'Sensaciones', title:'Muslos por encima de la ropa', desc:'Da un masaje breve en los muslos de tu pareja por encima de la ropa.', groupDesc:'En modo grupo, da a otra persona participante un masaje breve en los muslos por encima de la ropa.', points:3, type:'Nivel 2', mode:'both' },
+            { id:132, deckId:'sensaciones', level:'Sensaciones', title:'Beso y aliento', desc:'Da un beso en el cuello y deja que tu aliento roce la piel un instante.', groupDesc:'En modo grupo, da un beso en el cuello de otra persona participante y deja que tu aliento roce su piel un instante.', points:3, type:'Nivel 2', mode:'both' },
+            { id:133, deckId:'sensaciones', level:'Sensaciones', title:'Quietud y exploración', desc:'Tu pareja cierra los ojos y permanece quieta durante 15 segundos mientras recorres con las manos la zona del cuerpo que elija.', groupDesc:'En modo grupo, elige a otra persona participante; cierra los ojos y recibe 15 segundos de caricias con las manos en la zona que elija.', points:3, type:'Nivel 2', mode:'both' },
+            { id:134, deckId:'sensaciones', level:'Sensaciones', title:'Toma mi mano', desc:'Guía la mano de tu pareja hasta un lugar de tu cuerpo que quieras que acaricie por encima de la ropa.', groupDesc:'En modo grupo, guía la mano de otra persona participante hasta un lugar de tu cuerpo que quieras que acaricie por encima de la ropa.', points:3, type:'Nivel 2', mode:'both' },
+            { id:135, deckId:'sensaciones', level:'Sensaciones', title:'Caricia por turnos', desc:'Cada integrante de la pareja acaricia al otro durante 10 segundos en una zona que elija quien recibe.', groupDesc:'En modo grupo, cada participante acaricia durante 10 segundos a quien tenga al lado, en una zona elegida por quien recibe.', points:3, type:'Nivel 2', mode:'both' },
+            { id:136, deckId:'sensaciones', level:'Sensaciones', title:'Cambio de lado', desc:'Cambien de lado y repitan durante 10 segundos la última caricia.', groupDesc:'En modo grupo, cambien de lugar y repitan durante 10 segundos la última caricia con otra persona participante.', points:3, type:'Nivel 2', mode:'both' },
+            { id:137, deckId:'sensaciones', level:'Sensaciones', title:'Tu zona favorita', desc:'Tu pareja elige una zona cómoda y tú la acaricias durante 20 segundos.', groupDesc:'En modo grupo, otra persona participante elige una zona cómoda y tú la acaricias durante 20 segundos.', points:3, type:'Nivel 2', mode:'both' },
+            { id:138, deckId:'sensaciones', level:'Sensaciones', title:'Presión suave', desc:'Acaricia a tu pareja con presión suave desde la espalda hasta la cintura, por encima de la ropa.', groupDesc:'En modo grupo, acaricia a otra persona participante con presión suave desde la espalda hasta la cintura, por encima de la ropa.', points:3, type:'Nivel 2', mode:'both' },
+            { id:139, deckId:'sensaciones', level:'Sensaciones', title:'Dos nalgadas suaves', desc:'Da dos nalgadas suaves a tu pareja; quien las recibe elige el ritmo y la intensidad.', groupDesc:'En modo grupo, elige a otra persona participante y dale dos nalgadas suaves; quien las recibe elige el ritmo y la intensidad.', points:3, type:'Nivel 2', mode:'both' },
+            { id:140, deckId:'sensaciones', level:'Sensaciones', title:'Muy cerca', desc:'Acércate a tu pareja, acaríciale la cintura y bésense durante 15 segundos.', groupDesc:'En modo grupo, acércate a otra persona participante, acaríciale la cintura y bésense durante 15 segundos.', points:3, type:'Nivel 2', mode:'both' },
+
+            // Mazo 3 — Intimidad
+            { id:141, deckId:'intimidad', level:'Intimidad', title:'Mano bajo la camiseta', desc:'Quítale la camiseta a tu acompañante y recorre con la mano su abdomen desnudo hasta el pecho durante 20 segundos.', groupDesc:'En modo grupo, elige a otra persona participante, ayúdale a quitarse una prenda y acaricia su abdomen y pecho directamente sobre la piel.', points:5, type:'Nivel 3', mode:'both' },
+            { id:142, deckId:'intimidad', level:'Intimidad', title:'Muslos por dentro', desc:'Acaricia lentamente la cara interna del muslo desnudo de tu acompañante y acércate a su zona íntima.', groupDesc:'En modo grupo, acaricia lentamente el muslo desnudo de otra persona participante y acércate a su zona íntima.', points:5, type:'Nivel 3', mode:'both' },
+            { id:143, deckId:'intimidad', level:'Intimidad', title:'Besos que bajan', desc:'Deja tres besos desde el cuello hasta los pechos desnudos de tu acompañante.', groupDesc:'En modo grupo, deja tres besos desde el cuello hasta los pechos desnudos de otra persona participante.', points:5, type:'Nivel 3', mode:'both' },
+            { id:144, deckId:'intimidad', level:'Intimidad', title:'Cintura y cadera', desc:'Tu acompañante se quita una prenda y recibe 20 segundos de caricias directas en las caderas y la cintura desnudas.', groupDesc:'En modo grupo, quien recibe se quita una prenda y otra persona participante acaricia directamente sus caderas y cintura desnudas.', points:5, type:'Nivel 3', mode:'both' },
+            { id:145, deckId:'intimidad', level:'Intimidad', title:'Guía mi caricia', desc:'Guía la mano de tu acompañante hasta una zona íntima desnuda y dirige sus caricias durante 20 segundos.', groupDesc:'En modo grupo, guía la mano de otra persona participante hasta una zona íntima desnuda y dirige sus caricias durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:146, deckId:'intimidad', level:'Intimidad', title:'Beso prolongado', desc:'Bésense durante 30 segundos mientras se acarician directamente el pecho, los muslos o los genitales.', groupDesc:'En modo grupo, besa a otra persona participante durante 30 segundos mientras se acarician directamente zonas íntimas.', points:5, type:'Nivel 3', mode:'both' },
+            { id:147, deckId:'intimidad', level:'Intimidad', title:'Acaricia y provoca', desc:'Acaricia directamente los pechos, el abdomen y los muslos desnudos de tu acompañante durante 20 segundos.', groupDesc:'En modo grupo, acaricia directamente los pechos, el abdomen y los muslos desnudos de otra persona participante durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:148, deckId:'intimidad', level:'Intimidad', title:'Beso donde quieras', desc:'Tu acompañante elige una zona íntima desnuda para recibir un beso lento.', groupDesc:'En modo grupo, otra persona participante elige una zona íntima desnuda para recibir un beso lento.', points:5, type:'Nivel 3', mode:'both' },
+            { id:149, deckId:'intimidad', level:'Intimidad', title:'Desvestir y acariciar', desc:'Quítale una prenda a tu acompañante y acaricia directamente una zona íntima que elija durante 20 segundos.', groupDesc:'En modo grupo, quien roba elige a otra persona participante, le quita una prenda y acaricia directamente la zona íntima que esta elija.', points:5, type:'Nivel 3', mode:'both' },
+            { id:150, deckId:'intimidad', level:'Intimidad', title:'Dedos por el torso', desc:'Desliza los dedos por el torso desnudo de tu acompañante hasta llegar a una zona íntima.', groupDesc:'En modo grupo, desliza los dedos por el torso desnudo de otra persona participante hasta llegar a una zona íntima.', points:5, type:'Nivel 3', mode:'both' },
+            { id:151, deckId:'intimidad', level:'Intimidad', title:'Caricia íntima directa', desc:'Acaricia con la mano una zona genital desnuda de tu acompañante durante 20 segundos; quien recibe guía el ritmo.', groupDesc:'En modo grupo, acaricia con la mano una zona genital desnuda de otra persona participante durante 20 segundos; quien recibe guía el ritmo.', points:5, type:'Nivel 3', mode:'both' },
+            { id:152, deckId:'intimidad', level:'Intimidad', title:'Recorrido de besos', desc:'Deja un recorrido de besos desde el pecho hasta una zona íntima expuesta que elija tu pareja durante 20 segundos.', groupDesc:'En modo grupo, elige a otra persona participante y deja un recorrido de besos desde el pecho hasta una zona íntima expuesta que elija durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:153, deckId:'intimidad', level:'Intimidad', title:'Marca de besos', desc:'Deja tres besos lentos en los pechos, los muslos o los genitales desnudos que elija tu acompañante.', groupDesc:'En modo grupo, deja tres besos lentos en los pechos, los muslos o los genitales desnudos que elija otra persona participante.', points:5, type:'Nivel 3', mode:'both' },
+            { id:154, deckId:'intimidad', level:'Intimidad', title:'Manos inquietas', desc:'Durante 20 segundos, explora con las manos el cuerpo desnudo de tu acompañante e incluye una zona íntima.', groupDesc:'En modo grupo, explora con las manos el cuerpo desnudo de otra persona participante e incluye una zona íntima durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:155, deckId:'intimidad', level:'Intimidad', title:'Beso en el pecho', desc:'Besa lentamente los pechos desnudos de tu acompañante y termina con una caricia íntima.', groupDesc:'En modo grupo, besa lentamente los pechos desnudos de otra persona participante y termina con una caricia íntima.', points:5, type:'Nivel 3', mode:'both' },
+            { id:156, deckId:'intimidad', level:'Intimidad', title:'Elige la caricia', desc:'Quien recibe elige pechos, abdomen, muslos o genitales desnudos; su acompañante acaricia esa zona durante 20 segundos.', groupDesc:'En modo grupo, quien recibe elige pechos, abdomen, muslos o genitales desnudos; otra persona participante acaricia esa zona durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:157, deckId:'intimidad', level:'Intimidad', title:'Reto oral sugerido', desc:'Si ambos lo desean, quien roba la carta da una caricia oral íntima breve a su pareja; también vale un beso en otra zona erógena.', groupDesc:'En modo grupo, quien roba da una caricia oral íntima breve a otra persona participante; también vale un beso en otra zona erógena.', points:5, type:'Nivel 3', mode:'both' },
+            { id:158, deckId:'intimidad', level:'Intimidad', title:'Una mano, dos zonas', desc:'Acaricia dos zonas erógenas que elija tu pareja durante 10 segundos cada una.', groupDesc:'En modo grupo, acaricia dos zonas erógenas que elija otra persona participante durante 10 segundos cada una.', points:5, type:'Nivel 3', mode:'both' },
+            { id:159, deckId:'intimidad', level:'Intimidad', title:'Pégate y acaricia', desc:'Quítale una prenda a tu pareja y acaricia su cintura, caderas y muslos desnudos durante 20 segundos.', groupDesc:'En modo grupo, quítale una prenda a otra persona participante y acaricia directamente su cintura, caderas y muslos desnudos durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:160, deckId:'intimidad', level:'Intimidad', title:'Intercambio express', desc:'Durante 30 segundos, una persona acaricia los pechos o genitales expuestos de su pareja con la mano; después cambian de rol.', groupDesc:'En modo grupo, cambien de acompañante por 30 segundos y acaricien directamente con la mano los pechos o genitales expuestos de la persona elegida.', points:5, type:'Nivel 3', mode:'both' },
+
+            { id:169, deckId:'intimidad', level:'Intimidad', title:'Cambio de acompañante: caricias', desc:'Quítale una prenda a tu pareja y recorre con la mano desde el cuello hasta los muslos, incluyendo pecho y caderas expuestas, durante 30 segundos.', groupDesc:'En modo grupo, cambien de acompañante; quítense una prenda y recorran con la mano desde el cuello hasta los muslos, incluyendo pecho y caderas expuestas.', points:5, type:'Nivel 3', mode:'both' },
+            { id:170, deckId:'intimidad', level:'Intimidad', title:'Beso cruzado', desc:'Tu pareja elige pechos o genitales expuestos y recibe allí un beso lento durante 20 segundos.', groupDesc:'En modo grupo, elijan a otra persona participante para un beso lento de 20 segundos en sus pechos o genitales expuestos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:171, deckId:'intimidad', level:'Intimidad', title:'Manos compartidas', desc:'Quítale una prenda a tu pareja; recorre con ambas manos sus muslos y genitales expuestos durante 20 segundos.', groupDesc:'En modo grupo, quítense una prenda por turnos y recorran con ambas manos los muslos y genitales expuestos de la persona elegida.', points:5, type:'Nivel 3', mode:'both' },
+            { id:172, deckId:'intimidad', level:'Intimidad', title:'Intercambio de besos y caricias', desc:'Durante 30 segundos, alternen besos en el pecho y caricias directas en una zona íntima expuesta que elija quien recibe.', groupDesc:'En modo grupo, cambien de acompañante y alternen besos en el pecho con caricias directas en una zona íntima expuesta elegida por quien recibe.', points:5, type:'Nivel 3', mode:'both' },
+            { id:173, deckId:'intimidad', level:'Intimidad', title:'Masaje cruzado', desc:'Quien recibe elige dos o tres zonas para un masaje de 30 segundos: pies, muslos, cuello, pecho, vulva o zona alrededor del ano. Luego cambien.', groupDesc:'En modo grupo, cada persona elige a otra participante; quien recibe escoge dos o tres zonas para un masaje de 30 segundos: pies, muslos, cuello, pecho, vulva o zona alrededor del ano. Luego cambien.', points:5, type:'Nivel 3', mode:'both' },
+            { id:174, deckId:'intimidad', level:'Intimidad', title:'Acérquense por turnos', desc:'Quítale una prenda a tu pareja, elijan una zona íntima desnuda para besar y acariciar durante 20 segundos; luego cambien.', groupDesc:'En modo grupo, cada persona elige a quién acercarse, le quita una prenda y comparte un beso y caricias directas en una zona íntima desnuda.', points:5, type:'Nivel 3', mode:'both' },
+            { id:175, deckId:'intimidad', level:'Intimidad', title:'Pezones: besos y mordidas', desc:'Durante 20 segundos, besa, mordisquea suavemente o pellizca los pezones de tu pareja; luego cambien el turno.', groupDesc:'En modo grupo, elige a otra persona participante y besa, mordisquea suavemente o pellizca sus pezones durante 20 segundos; luego cambien el turno.', points:5, type:'Nivel 3', mode:'both' },
+            { id:176, deckId:'intimidad', level:'Intimidad', title:'Círculos con los dedos', desc:'Haz círculos lentos alrededor de los pezones de tu acompañante durante 15 segundos y cambia el sentido.', groupDesc:'En modo grupo, haz círculos lentos alrededor de los pezones de otra persona participante durante 15 segundos y cambia el sentido.', points:5, type:'Nivel 3', mode:'both' },
+            { id:177, deckId:'intimidad', level:'Intimidad', title:'Beso y mordida suave', desc:'Besa los pezones de tu acompañante y termina con una mordida muy suave en cada uno.', groupDesc:'En modo grupo, elige a otra persona participante: besa sus pezones y termina con una mordida muy suave en cada uno.', points:5, type:'Nivel 3', mode:'both' },
+            { id:178, deckId:'intimidad', level:'Intimidad', title:'Pellizcos delicados', desc:'Da cinco pellizcos suaves, alternando entre los pezones de tu acompañante.', groupDesc:'En modo grupo, da cinco pellizcos suaves, alternando entre los pezones de otra persona participante.', points:5, type:'Nivel 3', mode:'both' },
+            { id:179, deckId:'intimidad', level:'Intimidad', title:'Elige el ritmo', desc:'Tu pareja se quita una prenda y elige entre besos, caricias directas o pellizcos suaves en pechos o genitales desnudos; mantén el ritmo durante 20 segundos.', groupDesc:'En modo grupo, otra persona participante se quita una prenda y elige entre besos, caricias directas o pellizcos suaves en pechos o genitales desnudos; mantén el ritmo durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:180, deckId:'intimidad', level:'Intimidad', title:'Caricia y presión', desc:'Acaricia los pezones de tu acompañante con la yema de los dedos y alterna con una presión suave durante 20 segundos.', groupDesc:'En modo grupo, acaricia los pezones de otra persona participante con la yema de los dedos y alterna con una presión suave durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:181, deckId:'intimidad', level:'Intimidad', title:'Beso, aliento y beso', desc:'Besa un pezón de tu acompañante, sopla suavemente sobre la piel y repite en el otro.', groupDesc:'En modo grupo, besa un pezón de otra persona participante, sopla suavemente sobre la piel y repite en el otro.', points:5, type:'Nivel 3', mode:'both' },
+            { id:182, deckId:'intimidad', level:'Intimidad', title:'Del pecho a los pezones', desc:'Deja tres besos desde el pecho hasta los pezones de tu acompañante y termina con una caricia.', groupDesc:'En modo grupo, deja tres besos desde el pecho hasta los pezones de otra persona participante y termina con una caricia.', points:5, type:'Nivel 3', mode:'both' },
+            { id:183, deckId:'intimidad', level:'Intimidad', title:'Guía la caricia', desc:'Tu acompañante guía tu mano para indicar dónde y cómo acariciar sus pezones durante 20 segundos.', groupDesc:'En modo grupo, otra persona participante guía tu mano para indicar dónde y cómo acariciar sus pezones durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:184, deckId:'intimidad', level:'Intimidad', title:'Punta de lengua', desc:'Con la punta de la lengua, acaricia suavemente la zona genital de tu acompañante durante 15 segundos.', groupDesc:'En modo grupo, tu acompañante elige a otra persona participante para recibir la caricia; usa la punta de la lengua en su zona genital durante 15 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:185, deckId:'intimidad', level:'Intimidad', title:'Venda y caricia íntima', desc:'Quien recibe se venda los ojos y se quita una prenda; su pareja acaricia directamente pechos o genitales desnudos durante 20 segundos.', groupDesc:'En modo grupo, quien recibe se venda los ojos y se quita una prenda; otra persona participante acaricia directamente pechos o genitales desnudos durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:186, deckId:'intimidad', level:'Intimidad', title:'Adivina dónde', desc:'Con los ojos vendados, recibe tres caricias directas en pechos, muslos o genitales desnudos; adivina el recorrido.', groupDesc:'En modo grupo, con los ojos vendados recibe de otra persona participante tres caricias directas en pechos, muslos o genitales desnudos y adivina el recorrido.', points:5, type:'Nivel 3', mode:'both' },
+            { id:187, deckId:'intimidad', level:'Intimidad', title:'Círculos sobre la piel', desc:'Haz círculos lentos con los dedos sobre los genitales desnudos de tu pareja durante 20 segundos.', groupDesc:'En modo grupo, haz círculos lentos con los dedos sobre los genitales desnudos de otra persona participante durante 20 segundos.', points:5, type:'Nivel 3', mode:'both' },
+            { id:188, deckId:'intimidad', level:'Intimidad', title:'Roce y pausa', desc:'Acaricia directamente los genitales desnudos de tu pareja durante 10 segundos, haz una pausa breve y repite.', groupDesc:'En modo grupo, acaricia directamente los genitales desnudos de otra persona participante durante 10 segundos, haz una pausa breve y repite.', points:5, type:'Nivel 3', mode:'both' },
+            { id:189, deckId:'intimidad', level:'Intimidad', title:'Guía la mano vendada', desc:'Con los ojos vendados, deja que tu pareja guíe tu mano para acariciar directamente una zona íntima desnuda.', groupDesc:'En modo grupo, quien recibe se venda los ojos y otra persona participante guía su mano para acariciar directamente una zona íntima desnuda.', points:5, type:'Nivel 3', mode:'both' },
+            { id:190, deckId:'intimidad', level:'Intimidad', title:'Presión a elección', desc:'Acaricia directamente una zona íntima desnuda de tu pareja; quien recibe elige entre roce ligero o presión suave.', groupDesc:'En modo grupo, acaricia directamente una zona íntima desnuda de otra persona participante; quien recibe elige entre roce ligero o presión suave.', points:5, type:'Nivel 3', mode:'both' },
+            { id:191, deckId:'intimidad', level:'Intimidad', title:'Del muslo a la zona íntima', desc:'Recorre lentamente con la mano el muslo desnudo de tu pareja hasta acariciar directamente su zona íntima.', groupDesc:'En modo grupo, recorre lentamente con la mano el muslo desnudo de otra persona participante hasta acariciar directamente su zona íntima.', points:5, type:'Nivel 3', mode:'both' },
+            { id:192, deckId:'intimidad', level:'Intimidad', title:'Caricia cruzada a ciegas', desc:'Por turnos, véndense los ojos y reciban de su pareja 15 segundos de caricias directas en pechos o genitales desnudos.', groupDesc:'En modo grupo, por turnos véndense los ojos y reciban de otra persona participante 15 segundos de caricias directas en pechos o genitales desnudos.', points:5, type:'Nivel 3', mode:'both' },
+
+            // Comodines propios de cada mazo
+            { id:201, deckId:'coqueteo', level:'Comodines', title:'Repite cualquier carta', desc:'Elige una carta ya jugada y repítanla.', points:0, type:'Comodín', mode:'both' },
+            { id:202, deckId:'coqueteo', level:'Comodines', title:'Intercambio de roles', desc:'Intercambien los roles de quien propone y quien realiza la acción.', points:0, type:'Comodín', mode:'both' },
+            { id:203, deckId:'sensaciones', level:'Comodines', title:'Elige cualquier carta', desc:'Elige cualquier carta disponible de este mazo.', points:0, type:'Comodín', mode:'both' },
+            { id:204, deckId:'sensaciones', level:'Comodines', title:'Misma sensación', desc:'Ambos realizan la misma acción al mismo tiempo.', points:0, type:'Comodín', mode:'both' },
+            { id:205, deckId:'sensaciones', level:'Comodines', title:'Roba otra y decide', desc:'Roba otra carta y decide cuál de las dos hacer.', points:0, type:'Comodín', mode:'both' },
+            { id:206, deckId:'intimidad', level:'Comodines', title:'Dos cartas, una elección', desc:'Roba dos cartas de este mazo y elige una.', points:0, type:'Comodín', mode:'both' },
+            { id:207, deckId:'intimidad', level:'Comodines', title:'Intercambien el turno', desc:'Cede el turno a tu pareja.', points:0, type:'Comodín', mode:'both' },
+            { id:208, deckId:'intimidad', level:'Comodines', title:'Salto compartido', desc:'Ambos pueden saltar una carta sin penalización.', points:0, type:'Comodín', mode:'both' }
+        ];
+        const legacyDeckIds = {
+            coqueteo: new Set(),
+            sensaciones: new Set([11, 13, 14, 15, 16]),
+            intimidad: new Set([17, 18, 19, 20, 23])
+        };
+        const levelLabels = { coqueteo: 'Nivel 1 · Coqueteo', sensaciones: 'Nivel 2 · Sensaciones', intimidad: 'Nivel 3 · Intimidad' };
+        const cardNumberCounters = { coqueteo: 0, sensaciones: 49, intimidad: 99 };
+        const deck = [
+            ...legacyDeck.filter(card => card.type !== 'Comodín' && Object.entries(legacyDeckIds).some(([, ids]) => ids.has(card.id)))
+                .map(card => {
+                    const deckId = Object.entries(legacyDeckIds).find(([, ids]) => ids.has(card.id))[0];
+                    return { ...card, deckId, level: levelLabels[deckId] };
+                }),
+            ...suppliedDeckCards.filter(card => card.type !== 'Comodín').map(card => ({ ...card, level: levelLabels[card.deckId] }))
+        ].map(card => {
+            cardNumberCounters[card.deckId] = (cardNumberCounters[card.deckId] ?? 0) + 1;
+            return { ...card, cardNumber: cardNumberCounters[card.deckId] };
+        });
+        function formatCardNumber(card) {
+            const number = Number(card?.cardNumber ?? card?.id ?? 0);
+            return number < 50 ? String(number).padStart(3, '0') : String(number);
+        }
+        function canonicalCardData(card) {
+            if (!card) return card;
+            const canonical = deck.find(item => Number(item.id) === Number(card.id) && (!item.deckId || !card.deckId || item.deckId === card.deckId));
+            return canonical ? { ...card, ...canonical, drawnBy: card.drawnBy, drawnByUid: card.drawnByUid } : card;
+        }
+        function cardsForMode(mode) { return deck.filter(card => card.type !== 'Comodín' && (card.mode === 'both' || !card.mode || card.mode === mode)); }
+        function cardsForIntensity(mode, maxLevel = 3) {
+            return cardsForMode(mode).filter(card => {
+                const match = String(card.type || '').match(/Nivel\s+(\d+)/);
+                return match && Number(match[1]) <= Number(maxLevel);
+            });
+        }
+        function cardDescriptionForMode(card) {
+            const canonicalCard = deck.find(item => Number(item.id) === Number(card.id) && (!item.deckId || !card.deckId || item.deckId === card.deckId));
+            if (gameMode.value === 'grupo') return card.groupDesc || canonicalCard?.groupDesc || card.desc || canonicalCard?.desc || '';
+            return card.desc || canonicalCard?.desc || '';
+        }
+        const gameMode = document.getElementById('gameMode');
+        const intensityLimit = document.getElementById('intensityLimit');
+        try { gameMode.value = localStorage.getItem('chispa_mode') || 'pareja'; } catch {}
+        try { intensityLimit.value = localStorage.getItem('complices_intensity') || '3'; } catch {}
+        let activeDeck = cardsForIntensity(gameMode.value, intensityLimit.value);
+        let TOTAL_CARDS = activeDeck.filter(c => c.type !== "Comodín").length;
+
+        function freshGameData(mode = gameMode.value || 'pareja', maxLevel = Number(intensityLimit.value) || 3) {
+            return {
+                deckVersion: 11,
+                gameMode: mode,
+                intensityLimit: Number(maxLevel) || 3,
+                availableCards: [...cardsForIntensity(mode, maxLevel)],
+                scores: {},
+                history: [],
+                currentCard: null,
+                wildcardUsage: {}
+            };
+        }
+
+        let gameState = freshGameData();
+        let presences = {};
+        let localPlayerName = localStorage.getItem('fuegoCruzado_localPlayer') || "";
+        let hasObservedInitialGameState = false;
+        let previousCardWasActive = false;
+
+        // ============================================================
+        // Referencias DOM
+        // ============================================================
+        const drawBtn = document.getElementById('drawBtn');
+        const roulettePanel = document.getElementById('roulettePanel');
+        const rouletteWheel = document.getElementById('rouletteWheel');
+        const rouletteOptionTitle = document.getElementById('rouletteOptionTitle');
+        const drawHint = document.getElementById('drawHint');
+        document.querySelectorAll('[data-tab-target]').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.tabTarget;
+                document.querySelectorAll('[data-tab-target]').forEach(tab => tab.setAttribute('aria-selected', String(tab === button)));
+                document.querySelectorAll('.app-tab-panel').forEach(panel => panel.classList.toggle('hidden', panel.id !== targetId));
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+        let roomReady = false;
+        let isOnline = false;
+        let presenceDisconnectArmed = false;
+        const connectionStatus = document.getElementById('connectionStatus');
+        let rouletteActive = false;
+        drawBtn.disabled = true;
+        const actionButtonsContainer = document.getElementById('actionButtonsContainer');
+        const successBtn = document.getElementById('successBtn');
+        const failBtn = document.getElementById('failBtn');
+        const cardContainer = document.getElementById('cardContainer');
+        const cardLevel = document.getElementById('cardLevel');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardDescription = document.getElementById('cardDescription');
+        const cardDrawnBy = document.getElementById('cardDrawnBy');
+        const cardType = document.getElementById('cardType');
+        const sharedCount = document.getElementById('sharedCount');
+        const cardsLeft = document.getElementById('cardsLeft');
+        const deckProgressBar = document.getElementById('deckProgressBar');
+        const deckProgressLabel = document.getElementById('deckProgressLabel');
+        document.getElementById('joinRoomBtn').addEventListener('click', () => {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!/^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{12}$/.test(code)) { showToast('Ingresa el código válido de 12 caracteres que te compartieron.', 'error'); return; }
+            localStorage.setItem('chispa_room', code);
+            const url = new URL(location.href); url.searchParams.set('sala', code); location.href = url.toString();
+        });
+        document.getElementById('createRoomBtn').addEventListener('click', async () => {
+            if (!roomReady || !isOnline) { showToast('Espera a que la sala aparezca conectada antes de compartirla.', 'error'); return; }
+            try {
+                if (!(await gameRef.once('value')).exists()) { showToast('La sala todavía está terminando de prepararse. Inténtalo de nuevo en un momento.', 'info'); return; }
+                const inviteUrl = new URL(location.href);
+                inviteUrl.searchParams.set('sala', roomCode);
+                const inviteLink = inviteUrl.toString();
+                if (navigator.share) {
+                    await navigator.share({ title: 'Cómplices · invitación', text: `Únete a mi sala de Cómplices con el código ${roomCode}.`, url: inviteLink });
+                } else if (navigator.clipboard?.writeText) {
+                    await navigator.clipboard.writeText(inviteLink);
+                    showToast('Enlace de invitación copiado. Ábranlo en cada dispositivo.', 'success');
+                } else {
+                    prompt('Comparte este enlace para entrar a la misma sala:', inviteLink);
+                }
+            } catch (error) {
+                if (error?.name !== 'AbortError') prompt('Comparte este enlace para entrar a la misma sala:', `${location.origin}${location.pathname}?sala=${roomCode}`);
+            }
+        });
+        document.getElementById('newRoomBtn').addEventListener('click', () => {
+            const code = newRoomCode();
+            localStorage.setItem('chispa_room', code);
+            localStorage.setItem('chispa_pending_room', code);
+            const url = new URL(location.href);
+            url.searchParams.set('sala', code);
+            url.hash = '';
+            location.assign(url.toString());
+        });
+        const resetBtn = document.getElementById('resetBtn');
+        const wildcardBtn = document.getElementById('wildcardBtn');
+
+        const playerNameInput = document.getElementById('playerNameInput');
+        const savePlayerBtn = document.getElementById('savePlayerBtn');
+        const currentPlayerDisplay = document.getElementById('currentPlayerDisplay');
+
+        const activePlayersList = document.getElementById('activePlayersList');
+        const wildcardPlayersList = document.getElementById('wildcardPlayersList');
+
+        const historyBtn = document.getElementById('historyBtn');
+        const historyModal = document.getElementById('historyModal');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        const closeHistoryFooter = document.getElementById('closeHistoryFooter');
+        const historyListContainer = document.getElementById('historyListContainer');
+
+        const rulesBtn = document.getElementById('rulesBtn');
+        const rulesModal = document.getElementById('rulesModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalFooter = document.getElementById('closeModalFooter');
+
+        const viewDeckBtn = document.getElementById('viewDeckBtn');
+        const deckModal = document.getElementById('deckModal');
+        const closeDeckBtn = document.getElementById('closeDeckBtn');
+        const closeDeckFooter = document.getElementById('closeDeckFooter');
+        const deckLevelSelect = document.getElementById('deckLevelSelect');
+        const deckListSummary = document.getElementById('deckListSummary');
+        const deckIllustration = document.getElementById('deckIllustration');
+        const cardArt = document.getElementById('cardArt');
+        const deckListContainer = document.getElementById('deckListContainer');
+
+        // ============================================================
+        // Utilidades UI
+        // ============================================================
+        function showToast(message, kind = 'info') {
+            const colors = {
+                info: 'bg-slate-800 border-slate-700 text-slate-100',
+                success: 'bg-emerald-900/90 border-emerald-700 text-emerald-100',
+                error: 'bg-rose-900/90 border-rose-700 text-rose-100'
+            };
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto ${colors[kind]} border text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg max-w-sm text-center transition-opacity duration-300`;
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 2600);
+        }
+
+        function renderList(container, items, emptyMessageHtml, templateFn) {
+            if (!items || items.length === 0) {
+                container.innerHTML = emptyMessageHtml;
+                return;
+            }
+            container.innerHTML = items.map(templateFn).join('');
+        }
+
+        function badgeColorFor(type) {
+            switch (type) {
+                case "Nivel 1": return "bg-emerald-950 text-emerald-400 border border-emerald-800";
+                case "Nivel 2": return "bg-amber-950 text-amber-400 border border-amber-800";
+                case "Nivel 3": return "bg-rose-950 text-rose-400 border border-rose-800";
+                case "Comodín": return "bg-sky-950 text-sky-400 border border-sky-800";
+                default: return "bg-slate-800 text-slate-300";
+            }
+        }
+
+        function deckIllustrationMarkup(deckId, instance) {
+            const motifs = {
+                coqueteo: '<path d="M183 55c14-11 25-12 37-2 12-10 23-9 37 2-14 10-25 13-37 3-12 10-23 7-37-3Z" fill="none" stroke="#edc978" stroke-width="2.2"/><path d="M190 55h60M197 62c8 5 16 6 23 2 7 4 15 3 23-2" fill="none" stroke="#b8794d" stroke-width="1.2"/>',
+                sensaciones: '<path d="M168 68c20 0 27-7 36-19 3-4 8-2 7 3l-4 12 19-20c4-4 9 0 6 4l-12 17 18-14c4-3 8 2 4 6l-15 14h-39c-9 0-15 2-20 5M272 68c-20 0-27-7-36-19-3-4-8-2-7 3l4 12-19-20c-4-4-9 0-6 4l12 17-18-14c-4-3-8 2-4 6l15 14h39c9 0 15 2 20 5" fill="none" stroke="#edc978" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M220 48v8m-4-4h8" stroke="#fff0c0" stroke-width="1.4"/>',
+                intimidad: '<path d="M220 76c-9-10-35-25-35-39 0-12 15-17 24-7l11 11 11-11c9-10 24-5 24 7 0 14-26 29-35 39Z" fill="none" stroke="#edc978" stroke-width="2"/><path d="M190 38c16 0 21 7 30 18 9-11 14-18 30-18M194 70c12-9 20-13 26-14 6 1 14 5 26 14" fill="none" stroke="#b8794d" stroke-width="1.2"/>'
+            };
+            const uid = `chispa-${instance}-${deckId}`;
+            return `<svg viewBox="0 0 440 110" role="img" aria-label="Ilustración ${deckId}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${uid}-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#482333"/><stop offset=".55" stop-color="#21151e"/><stop offset="1" stop-color="#121015"/></linearGradient><radialGradient id="${uid}-glow"><stop stop-color="#c28a50" stop-opacity=".3"/><stop offset="1" stop-color="#c28a50" stop-opacity="0"/></radialGradient></defs><rect width="440" height="110" rx="16" fill="url(#${uid}-bg)"/><ellipse cx="220" cy="55" rx="125" ry="75" fill="url(#${uid}-glow)"/><rect x="8" y="8" width="424" height="94" rx="12" fill="none" stroke="#b98a52" stroke-opacity=".4"/><path d="M28 55h103m178 0h103" stroke="#c3975a" stroke-opacity=".45"/><circle cx="220" cy="55" r="38" fill="#160f16" fill-opacity=".42" stroke="#b98a52" stroke-opacity=".46"/><path d="M220 13v8M220 89v8M28 55h8m368 0h8" stroke="#edc978" stroke-opacity=".8"/><path d="M220 44l2 7 7 2-7 2-2 7-2-7-7-2 7-2Z" fill="#edc978" opacity=".75"/>${motifs[deckId] || motifs.coqueteo}<circle cx="54" cy="32" r="1.5" fill="#f0d798"/><circle cx="386" cy="78" r="1.5" fill="#f0d798"/><circle cx="375" cy="30" r="1" fill="#f0d798"/><circle cx="64" cy="80" r="1" fill="#f0d798"/></svg>`;
+        }
+
+        function populateDeckModal() {
+            const levelNames = {
+                coqueteo: 'Nivel 1 · Coqueteo',
+                sensaciones: 'Nivel 2 · Sensaciones',
+                intimidad: 'Nivel 3 · Intimidad'
+            };
+            Array.from(deckLevelSelect.options).forEach(option => {
+                const cards = activeDeck.filter(card => card.deckId === option.value);
+                const challenges = cards.filter(card => card.type !== 'Comodín').length;
+                const wildcards = cards.length - challenges;
+                option.textContent = `${levelNames[option.value]} · ${challenges} retos${wildcards ? ` + ${wildcards} comodines` : ''}`;
+            });
+            const selectedDeckId = deckLevelSelect.value || 'coqueteo';
+            deckIllustration.innerHTML = deckIllustrationMarkup(selectedDeckId, 'catalog');
+            const selectedCards = activeDeck
+                .filter(card => card.deckId === selectedDeckId)
+                .sort((a, b) => Number(a.cardNumber) - Number(b.cardNumber));
+            const challengeCount = selectedCards.filter(card => card.type !== 'Comodín').length;
+            deckListSummary.textContent = `${levelNames[selectedDeckId]} · ${challengeCount} retos`;
+            renderList(deckListContainer, selectedCards, '<p class="text-center text-slate-500 py-6">Este nivel no tiene cartas disponibles en el modo actual.</p>', (card) => `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col gap-1.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-white text-xs">${formatCardNumber(card)}. ${card.title}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColorFor(card.type)}">${card.type === 'Comodín' ? card.level : `${deckLabels[card.deckId]} · ${card.type}`}</span>
+                    </div>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">${cardDescriptionForMode(card)}</p>
+                </div>
+            `);
+        }
+        populateDeckModal();
+        deckLevelSelect.addEventListener('change', populateDeckModal);
+
+        // ============================================================
+        // Sincronización con Firebase
+        // ============================================================
+        function listFromFirebase(value) { return Array.isArray(value) ? value : Object.values(value || {}); }
+        function historyHasCard(history, card) {
+            const numbers = [formatCardNumber(card), String(Number(card?.cardNumber ?? card?.id ?? 0))];
+            return listFromFirebase(history).some(item => {
+                if (Number(item.cardId) === Number(card.id)) return true;
+                const title = String(item.title || '');
+                return title.includes(card.title) || numbers.some(number => title.startsWith(`${number}.`));
+            });
+        }
+
+        function migrateLegacyGameData(legacyStates, previousSharedState = null) {
+            const mode = previousSharedState?.gameMode || 'pareja';
+            const base = freshGameData(mode);
+            const states = [...legacyStates];
+            if (previousSharedState) states.push([null, previousSharedState]);
+
+            const availableByDeck = new Map();
+            const knownTitlesByDeck = new Map();
+            const currentCards = [];
+            const scores = {};
+            const wildcardUsage = {};
+            const history = [];
+
+            for (const [sourceDeckId, state] of states) {
+                if (!state) continue;
+                const availableCards = listFromFirebase(state.availableCards);
+                for (const card of availableCards) {
+                    const deckId = card.deckId || sourceDeckId || 'coqueteo';
+                    if (!availableByDeck.has(deckId)) availableByDeck.set(deckId, new Set());
+                    availableByDeck.get(deckId).add(Number(card.id));
+                }
+                for (const item of listFromFirebase(state.history)) {
+                    const deckId = item.deckId || sourceDeckId || 'coqueteo';
+                    if (!knownTitlesByDeck.has(deckId)) knownTitlesByDeck.set(deckId, new Set());
+                    knownTitlesByDeck.get(deckId).add(item.title);
+                    history.push({ ...item, deckId });
+                }
+                if (state.currentCard) currentCards.push({ ...state.currentCard, deckId: state.currentCard.deckId || sourceDeckId || 'coqueteo' });
+                Object.entries(state.scores || {}).forEach(([name, points]) => { scores[name] = (scores[name] || 0) + Number(points || 0); });
+                Object.entries(state.wildcardUsage || {}).forEach(([name, count]) => { wildcardUsage[name] = Math.min(LIMITE_COMODINES, (wildcardUsage[name] || 0) + Number(count || 0)); });
+            }
+
+            const currentCard = currentCards[0] || null;
+            const availableCards = base.availableCards.filter(card => {
+                const deckId = card.deckId || 'coqueteo';
+                const savedAvailable = availableByDeck.get(deckId);
+                const wasAvailable = savedAvailable?.has(Number(card.id));
+                const appearedInHistory = knownTitlesByDeck.get(deckId)?.has(card.title) || false;
+                const isCurrent = currentCard && Number(currentCard.id) === Number(card.id) && (currentCard.deckId || deckId) === deckId;
+                const wasKnown = wasAvailable || appearedInHistory || isCurrent;
+                return !wasKnown || wasAvailable || isCurrent;
+            });
+
+            return { ...base, availableCards, scores, history, currentCard, wildcardUsage };
+        }
+
+        async function reconcileSharedDeck() {
+            await gameRef.transaction(current => {
+                if (!current || Number(current.deckVersion || 0) >= 11) return current;
+                const mode = current.gameMode || 'pareja';
+                const maxLevel = Math.max(1, Math.min(3, Number(current.intensityLimit || 3)));
+                const savedAvailable = listFromFirebase(current.availableCards).filter(card => card.type !== 'Comodín');
+                const history = listFromFirebase(current.history);
+                const currentCard = current.currentCard || null;
+                const availableCards = cardsForIntensity(mode, maxLevel).filter(card => {
+                    const isAvailable = savedAvailable.some(saved => Number(saved.id) === Number(card.id) && (!saved.deckId || saved.deckId === card.deckId));
+                    const isCurrent = currentCard && Number(currentCard.id) === Number(card.id) && (!currentCard.deckId || currentCard.deckId === card.deckId);
+                    const wasPlayed = historyHasCard(history, card);
+                    return isAvailable || isCurrent || !wasPlayed;
+                });
+                return { ...current, deckVersion: 11, gameMode: mode, intensityLimit: maxLevel, availableCards, scores: current.scores || {}, history, wildcardUsage: current.wildcardUsage || {} };
+            });
+        }
+
+        async function prepareSharedGameState(previousSharedState = null) {
+            const legacyStates = await Promise.all(Object.entries(legacyGameRefs).map(async ([deckId, ref]) => [deckId, (await ref.once('value')).val()]));
+            const migrated = migrateLegacyGameData(legacyStates, previousSharedState);
+            await gameRef.transaction(current => current?.deckVersion >= 5 ? current : migrated);
+        }
+
+        authReady.then(async (credential) => {
+            if (invalidRequestedRoom) {
+                drawBtn.disabled = true;
+                connectionStatus.textContent = 'Código inválido';
+                showToast('Ese enlace no tiene un código de sala válido. Únete con el código completo o crea una sala nueva.', 'error');
+                return;
+            }
+            await memberRef.child(credential.user.uid).set(true);
+            const initialState = (await gameRef.once('value')).val();
+            if (hasExplicitRoom && !initialState) {
+                const legacyStates = await Promise.all(Object.values(legacyGameRefs).map(ref => ref.once('value')));
+                if (!legacyStates.some(snapshot => snapshot.exists())) {
+                    await memberRef.child(credential.user.uid).remove().catch(() => {});
+                    roomReady = false;
+                    drawBtn.disabled = true;
+                    roomLabel.textContent = 'Sala no encontrada';
+                    connectionStatus.textContent = 'No encontrada';
+                    showToast('No encontramos una partida con ese código. Comprueba el enlace o crea una sala nueva.', 'error');
+                    return;
+                }
+            }
+            connectionRef.on('value', snapshot => {
+                isOnline = snapshot.val() === true;
+                connectionStatus.textContent = isOnline ? 'En línea' : 'Reconectando…';
+                connectionStatus.classList.toggle('text-emerald-300', isOnline);
+                connectionStatus.classList.toggle('text-amber-300', !isOnline);
+                if (!isOnline) {
+                    presenceDisconnectArmed = false;
+                    drawBtn.disabled = true;
+                    wildcardBtn.disabled = true;
+                    return;
+                }
+                wildcardBtn.disabled = false;
+                drawBtn.disabled = !roomReady || Boolean(gameState.currentCard);
+                syncPresence();
+            });
+            if (!initialState || Number(initialState.deckVersion || 0) < 5) await prepareSharedGameState(initialState);
+            await reconcileSharedDeck();
+            roomReady = true;
+            if (isPendingNewRoom) localStorage.removeItem('chispa_pending_room');
+            drawBtn.disabled = !isOnline;
+            wildcardBtn.disabled = !isOnline;
+            syncPresence();
+            gameRef.on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data && Number(data.deckVersion || 0) >= 5) {
+                    const rawAvailableCards = listFromFirebase(data.availableCards);
+                    const nextCard = data.currentCard || null;
+                    const nippleCard = deck.find(card => card.id === 175);
+                    const nippleCardAlreadyKnown = rawAvailableCards.some(card => Number(card.id) === 175)
+                        || Number(nextCard?.id) === 175
+                        || historyHasCard(data.history, nippleCard);
+                    const removeOldWildcards = rawAvailableCards.some(card => card.type === 'Comodín');
+                    const addNippleCard = nippleCard && !nippleCardAlreadyKnown;
+                    if (removeOldWildcards || addNippleCard) {
+                        gameRef.child('availableCards').transaction(cards => {
+                            const currentCards = listFromFirebase(cards).filter(card => card.type !== 'Comodín');
+                            if (addNippleCard && !currentCards.some(card => Number(card.id) === 175)) currentCards.push(nippleCard);
+                            return currentCards;
+                        });
+                    }
+                    if (hasObservedInitialGameState && nextCard && !previousCardWasActive) {
+                        const localUid = auth.currentUser?.uid;
+                        const isLocalDraw = nextCard.drawnByUid
+                            ? nextCard.drawnByUid === localUid
+                            : nextCard.drawnBy === localPlayerName;
+                        if (!isLocalDraw) {
+                            const announcedCard = canonicalCardData(nextCard);
+                            const player = nextCard.drawnBy || 'Un jugador';
+                            const title = announcedCard.title || 'una carta';
+                            const level = announcedCard.level || announcedCard.type || '';
+                            showToast(`🎡 ${player} giró la ruleta: salió la ${formatCardNumber(announcedCard)} «${title}»${level ? ` · ${level}` : ''}`, 'success');
+                        }
+                    }
+                    previousCardWasActive = Boolean(nextCard);
+                    hasObservedInitialGameState = true;
+                    gameMode.value = data.gameMode || 'pareja';
+                    localStorage.setItem('chispa_mode', gameMode.value);
+                    const roomIntensity = Math.max(1, Math.min(3, Number(data.intensityLimit || 3)));
+                    intensityLimit.value = String(roomIntensity);
+                    localStorage.setItem('complices_intensity', String(roomIntensity));
+                    activeDeck = cardsForIntensity(gameMode.value, roomIntensity);
+                    TOTAL_CARDS = activeDeck.filter(card => card.type !== 'Comodín').length;
+                    gameState = {
+                        availableCards: rawAvailableCards.filter(card => card.type !== 'Comodín').map(canonicalCardData),
+                        intensityLimit: roomIntensity,
+                        scores: data.scores || {},
+                        history: listFromFirebase(data.history),
+                        currentCard: canonicalCardData(data.currentCard || null),
+                        wildcardUsage: data.wildcardUsage || {}
+                    };
+                    renderUI();
+                } else {
+                    gameRef.set(freshGameData()).catch(handleFirebaseError);
+                }
+            }, handleFirebaseError);
+            presenceRef.on('value', (snapshot) => {
+                presences = snapshot.val() || {};
+                renderPresences();
+            }, handleFirebaseError);
+        }).catch((error) => {
+            console.error('No se pudo autenticar o entrar a la sala:', error);
+            showToast('No se pudo conectar. Revisa la autenticación anónima y las reglas de Firebase.', 'error');
+        });
+
+        function handleFirebaseError(error) {
+            console.error('Firebase error:', error);
+            showToast('Problema de conexión con la nube. Reintentando...', 'error');
+        }
+
+        function updateGameState(mutateFn) {
+            if (!roomReady || !isOnline) {
+                showToast('La sala está reconectando. Espera a que aparezca «En línea» antes de continuar.', 'error');
+                return;
+            }
+            gameRef.transaction((current) => {
+                const base = current || freshGameData();
+                return mutateFn(base);
+            }, (error, committed) => {
+                if (error) {
+                    console.error('Transacción fallida:', error);
+                    showToast('No se pudo sincronizar la acción, probá de nuevo.', 'error');
+                } else if (!committed) {
+                    showToast('Otro jugador actuó al mismo tiempo, reintentá.', 'error');
+                }
+            });
+        }
+
+        function syncPresence() {
+            if (!roomReady || !isOnline || !localPlayerName || !auth.currentUser) return;
+            const myPresenceRef = presenceRef.child(auth.currentUser.uid);
+            const writePresence = () => myPresenceRef.set({ name: localPlayerName, ts: Date.now() }).catch(handleFirebaseError);
+            if (!presenceDisconnectArmed) {
+                myPresenceRef.onDisconnect().remove().then(() => {
+                    presenceDisconnectArmed = true;
+                    return writePresence();
+                }).catch(error => {
+                    presenceDisconnectArmed = false;
+                    console.error('No se pudo preparar la presencia al desconectar:', error);
+                });
+            } else writePresence();
+        }
+        setInterval(syncPresence, 5000);
+
+        // ============================================================
+        // Render
+        // ============================================================
+        function renderPresences() {
+            const now = Date.now();
+            const activeEntries = Object.entries(presences)
+                .map(([uid, presence]) => [presence?.name || uid, typeof presence === 'number' ? presence : presence?.ts])
+                .filter(([, ts]) => Number.isFinite(ts) && now - ts < 15000);
+
+            renderList(
+                activePlayersList,
+                activeEntries,
+                `<span class="text-slate-500 italic">Nadie conectado activamente</span>`,
+                ([name]) => `
+                    <span class="bg-slate-950 border border-slate-800 px-2 py-1 rounded-md text-slate-200 flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${name}
+                    </span>
+                `
+            );
+        }
+
+        function renderUI() {
+            const played = TOTAL_CARDS - gameState.availableCards.filter(c => c.type !== "Comodín").length;
+            cardsLeft.textContent = gameState.availableCards.length;
+            deckProgressBar.style.width = `${Math.min(100, (played / TOTAL_CARDS) * 100)}%`;
+            deckProgressLabel.textContent = `${played} de ${TOTAL_CARDS} jugadas`;
+
+            const maxLevel = Number(gameState.intensityLimit || 3);
+            intensityLimit.value = String(maxLevel);
+            const gameAlreadyStarted = Boolean(gameState.currentCard || gameState.history?.length || gameState.availableCards.length < TOTAL_CARDS);
+            intensityLimit.disabled = gameAlreadyStarted || !roomReady || !isOnline;
+            document.getElementById('intensityHelp').textContent = gameAlreadyStarted
+                ? 'La intensidad elegida queda fija durante esta partida. Reinicia para cambiarla.'
+                : 'Ajuste común para toda la sala. La ruleta conserva la progresión gradual dentro del máximo elegido.';
+
+            const scores = gameState.scores || {};
+            const wildcardUsage = gameState.wildcardUsage || {};
+            const history = gameState.history || [];
+            const finished = history.filter(item => item.status === "Finalizada" || item.status === "Compartida" || item.status === "Cumplida").length;
+            sharedCount.textContent = String(finished);
+
+            const allPlayers = Object.keys(scores);
+            renderList(
+                wildcardPlayersList,
+                allPlayers,
+                `<span class="text-[10px] text-slate-500 italic">Esperando jugadores...</span>`,
+                (playerName) => {
+                    const usados = wildcardUsage[playerName] || 0;
+                    const restantes = Math.max(0, LIMITE_COMODINES - usados);
+                    const isDepleted = restantes === 0;
+                    return `
+                        <div class="wildcard-badge ${isDepleted ? 'depleted' : ''}">
+                            <span><strong>${playerName}</strong></span>
+                            <span>⭐ ${restantes}/${LIMITE_COMODINES}</span>
+                        </div>
+                    `;
+                }
+            );
+
+            renderList(
+                historyListContainer,
+                history,
+                `<p class="text-center text-slate-500 italic py-4">No hay cartas jugadas en el historial todavía.</p>`,
+                (item) => {
+                    const statusBadge = item.status === "Finalizada" || item.status === "Compartida" || item.status === "Cumplida"
+                        ? `<span class="text-emerald-400 font-bold">✅ Turno finalizado</span>`
+                        : item.status === "Comodín usado"
+                            ? `<span class="text-amber-300 font-bold">🃏 Comodín usado</span>`
+                            : `<span class="text-slate-400 font-bold">↪ Omitida</span>`;
+                    return `
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1">
+                            <div class="flex justify-between text-[11px]">
+                                <span class="font-bold text-rose-500">${item.player}</span>
+                                ${statusBadge}
+                            </div>
+                            <p class="font-semibold text-white">${item.title}</p>
+                            <span class="text-[10px] text-slate-500">${item.level}</span>
+                        </div>
+                    `;
+                }
+            );
+
+            if (gameState.currentCard) {
+                drawHint.classList.add('hidden');
+                rouletteActive = false;
+                roulettePanel.classList.add('hidden');
+                rouletteWheel.classList.remove('spinning');
+                const card = gameState.currentCard;
+                cardArt.innerHTML = deckIllustrationMarkup(card.deckId || 'coqueteo', 'card');
+                cardLevel.textContent = card.level;
+                cardTitle.textContent = `${formatCardNumber(card)}. ${card.title}`;
+                cardDescription.textContent = cardDescriptionForMode(card);
+
+                // Aplicar o quitar efecto visual excitante si es Nivel 3
+                if (card.type === "Nivel 3") {
+                    cardContainer.classList.add('card-high-voltage');
+                } else {
+                    cardContainer.classList.remove('card-high-voltage');
+                }
+
+                if (card.drawnBy) {
+                    cardDrawnBy.textContent = `Robada por ${card.drawnBy}`;
+                    cardDrawnBy.classList.remove('hidden');
+                } else {
+                    cardDrawnBy.classList.add('hidden');
+                }
+
+                cardType.textContent = card.type;
+
+                actionButtonsContainer.classList.remove('hidden');
+                drawBtn.disabled = true;
+            } else {
+                drawHint.classList.toggle('hidden', rouletteActive);
+                cardArt.innerHTML = deckIllustrationMarkup('coqueteo', 'card');
+                cardContainer.classList.remove('card-high-voltage');
+                if (rouletteActive) return;
+                cardLevel.textContent = 'Presiona "Robar Carta"';
+                cardTitle.textContent = "¡Listo para comenzar!";
+                cardDescription.textContent = "Saca tu primera carta para encender la chispa grupal.";
+                cardDrawnBy.classList.add('hidden');
+                cardType.textContent = "Mazo Principal";
+                actionButtonsContainer.classList.add('hidden');
+                drawBtn.disabled = !roomReady || !isOnline;
+            }
+        }
+
+        // ============================================================
+        // Eventos
+        // ============================================================
+        savePlayerBtn.addEventListener('click', () => {
+            const name = playerNameInput.value.trim();
+            if (!name) {
+                showToast("Por favor ingresa un nombre válido.", 'error');
+                return;
+            }
+            localPlayerName = name;
+            localStorage.setItem('fuegoCruzado_localPlayer', name);
+            currentPlayerDisplay.textContent = `Jugador en este teléfono: ${name}`;
+
+            updateGameState((state) => {
+                if (!state.scores) state.scores = {};
+                if (!(name in state.scores)) state.scores[name] = 0;
+                return state;
+            });
+
+            syncPresence();
+            document.getElementById('tabGameButton').click();
+            showToast(`¡Nombre guardado: ${name}!`, 'success');
+        });
+
+        gameMode.addEventListener('change', () => {
+            const gameAlreadyStarted = Boolean(gameState.currentCard || gameState.history?.length || gameState.availableCards.length < TOTAL_CARDS);
+            if (gameAlreadyStarted) {
+                showToast("El modo queda fijado al comenzar la partida para no reiniciar la sala ni perder el progreso.", 'error');
+                gameMode.value = localStorage.getItem('chispa_mode') || 'pareja';
+                return;
+            }
+            localStorage.setItem('chispa_mode', gameMode.value);
+            const maxLevel = Number(gameState.intensityLimit || 3);
+            activeDeck = cardsForIntensity(gameMode.value, maxLevel);
+            TOTAL_CARDS = activeDeck.filter(c => c.type !== "Comodín").length;
+            updateGameState(state => {
+                state.gameMode = gameMode.value;
+                state.intensityLimit = maxLevel;
+                state.availableCards = [...activeDeck];
+                state.currentCard = null;
+                return state;
+            });
+            drawBtn.disabled = !roomReady || !isOnline;
+            renderUI();
+            populateDeckModal();
+        });
+
+        intensityLimit.addEventListener('change', () => {
+            const selectedLevel = Math.max(1, Math.min(3, Number(intensityLimit.value) || 3));
+            const previousLevel = Number(gameState.intensityLimit || 3);
+            if (!roomReady || !isOnline) {
+                intensityLimit.value = String(previousLevel);
+                showToast('Conecta la sala antes de cambiar la intensidad.', 'error');
+                return;
+            }
+            gameRef.transaction(current => {
+                if (!current) return current;
+                const currentMode = current.gameMode || 'pareja';
+                const currentLimit = Math.max(1, Math.min(3, Number(current.intensityLimit || 3)));
+                const currentAvailable = listFromFirebase(current.availableCards);
+                const alreadyStarted = Boolean(current.currentCard || listFromFirebase(current.history).length || currentAvailable.length < cardsForIntensity(currentMode, currentLimit).length);
+                if (alreadyStarted) return current;
+                return {
+                    ...current,
+                    intensityLimit: selectedLevel,
+                    availableCards: [...cardsForIntensity(currentMode, selectedLevel)]
+                };
+            }, (error, committed, snapshot) => {
+                const state = snapshot?.val();
+                if (error || !committed || Number(state?.intensityLimit || 3) !== selectedLevel) {
+                    const restoredLevel = Math.max(1, Math.min(3, Number(state?.intensityLimit || previousLevel)));
+                    intensityLimit.value = String(restoredLevel);
+                    if (error) handleFirebaseError(error);
+                    else showToast('La intensidad solo puede cambiarse antes del primer giro. Reinicia la partida para modificarla.', 'info');
+                    return;
+                }
+                localStorage.setItem('complices_intensity', String(selectedLevel));
+                showToast(`Intensidad máxima: Nivel ${selectedLevel}.`, 'success');
+            });
+        });
+
+        function drawLevelWeights(drawsSoFar) {
+            if (drawsSoFar === 0) return { coqueteo: 0.75, sensaciones: 0.25, intimidad: 0 };
+            if (drawsSoFar < 3) return { coqueteo: 0.55, sensaciones: 0.45, intimidad: 0 };
+            if (drawsSoFar < 6) return { coqueteo: 0.35, sensaciones: 0.5, intimidad: 0.15 };
+            return { coqueteo: 0.25, sensaciones: 0.35, intimidad: 0.4 };
+        }
+
+        function pickWeightedCard(cards, drawsSoFar) {
+            if (!cards.length) return null;
+            const weights = drawLevelWeights(drawsSoFar);
+            const availableDeckIds = [...new Set(cards.map(card => card.deckId || 'coqueteo'))];
+            const eligibleDecks = availableDeckIds
+                .map(deckId => ({ deckId, weight: weights[deckId] || 0 }))
+                .filter(option => option.weight > 0);
+            const totalWeight = eligibleDecks.reduce((sum, option) => sum + option.weight, 0);
+            if (!totalWeight) return cards[Math.floor(Math.random() * cards.length)];
+            let roll = Math.random() * totalWeight;
+            let chosenDeckId = eligibleDecks[eligibleDecks.length - 1].deckId;
+            for (const option of eligibleDecks) {
+                roll -= option.weight;
+                if (roll < 0) { chosenDeckId = option.deckId; break; }
+            }
+            const levelCards = cards.filter(card => (card.deckId || 'coqueteo') === chosenDeckId);
+            return levelCards[Math.floor(Math.random() * levelCards.length)];
+        }
+
+        drawBtn.addEventListener('click', () => {
+            if (!roomReady || !isOnline) {
+                showToast('Espera a que la sala aparezca «En línea» para girar.', 'error');
+                return;
+            }
+            if (!localPlayerName) {
+                showToast("Configura tu nombre en este teléfono primero.", 'error');
+                playerNameInput.focus();
+                return;
+            }
+            if (gameState.currentCard) {
+                showToast("Ya hay una carta activa, resolvela primero.", 'error');
+                return;
+            }
+            if (gameState.availableCards.length === 0) {
+                showToast("Se agotaron las cartas. Reiniciá el mazo.", 'error');
+                return;
+            }
+
+            const available = [...gameState.availableCards];
+            const drawsSoFar = Math.max(0, TOTAL_CARDS - available.length);
+            const winner = pickWeightedCard(available, drawsSoFar);
+            rouletteActive = true;
+            drawHint.classList.add('hidden');
+            drawBtn.disabled = true;
+            roulettePanel.classList.remove('hidden');
+            rouletteWheel.classList.remove('spinning');
+            rouletteOptionTitle.textContent = 'Preparando nivel y carta al azar…';
+            void rouletteWheel.offsetWidth;
+            rouletteWheel.classList.add('spinning');
+            const spinStartedAt = performance.now();
+            let spinTimer;
+            const spinDuration = 4400;
+            const tick = () => {
+                const progress = Math.min(1, (performance.now() - spinStartedAt) / spinDuration);
+                const option = pickWeightedCard(available, drawsSoFar);
+                rouletteOptionTitle.textContent = `${deckLabels[option.deckId] || 'Comodines'} · ${option.title}`;
+                if (progress < 1) spinTimer = setTimeout(tick, 42 + 420 * Math.pow(progress, 2.8));
+            };
+            tick();
+            setTimeout(() => {
+                clearTimeout(spinTimer);
+                rouletteWheel.classList.remove('spinning');
+                rouletteOptionTitle.textContent = `${deckLabels[winner.deckId] || 'Comodines'} · ${winner.title}`;
+                setTimeout(() => {
+                    roulettePanel.classList.add('hidden');
+                    rouletteActive = false;
+                    updateGameState((state) => {
+                        if (!state.availableCards || state.availableCards.length === 0 || state.currentCard) return state;
+                        const cards = [...state.availableCards];
+                        let selectedIndex = cards.findIndex(card => Number(card.id) === Number(winner.id));
+                        if (selectedIndex < 0) {
+                            const fallback = pickWeightedCard(cards, Math.max(0, TOTAL_CARDS - cards.length));
+                            selectedIndex = cards.findIndex(card => Number(card.id) === Number(fallback?.id));
+                        }
+                        const drawn = cards.splice(selectedIndex, 1)[0];
+                        state.availableCards = cards;
+                        state.currentCard = { ...drawn, drawnBy: localPlayerName, drawnByUid: auth.currentUser?.uid || null };
+                        return state;
+                    });
+                }, 450);
+            }, 2800);
+        });
+
+        successBtn.addEventListener('click', () => {
+            if (!gameState.currentCard || !localPlayerName) return;
+            const card = gameState.currentCard;
+
+            updateGameState((state) => {
+                if (!state.history) state.history = [];
+                state.history = [{
+                    player: localPlayerName,
+                    title: `${formatCardNumber(card)}. ${card.title}`,
+                    level: card.level,
+                    status: "Finalizada"
+                }, ...state.history];
+
+                state.currentCard = null;
+                return state;
+            });
+
+            showToast("Turno finalizado; ya pueden continuar.", 'success');
+        });
+
+        failBtn.addEventListener('click', () => {
+            if (!gameState.currentCard || !localPlayerName) return;
+            const card = gameState.currentCard;
+
+            updateGameState((state) => {
+                if (!state.history) state.history = [];
+                state.history = [{
+                    player: localPlayerName,
+                    title: `${formatCardNumber(card)}. ${card.title}`,
+                    level: card.level,
+                    status: "Omitida"
+                }, ...state.history];
+
+                state.currentCard = null;
+                return state;
+            });
+
+            showToast("Carta omitida sin penalización.", 'info');
+        });
+
+        wildcardBtn.addEventListener('click', () => {
+            if (!localPlayerName) {
+                showToast("Configura tu nombre en este teléfono primero.", 'error');
+                return;
+            }
+
+            let limitReached = false;
+
+            updateGameState((state) => {
+                if (!state.wildcardUsage) state.wildcardUsage = {};
+
+                const usosActuales = state.wildcardUsage[localPlayerName] || 0;
+                if (usosActuales >= LIMITE_COMODINES) {
+                    limitReached = true;
+                    return state;
+                }
+
+                state.wildcardUsage[localPlayerName] = usosActuales + 1;
+
+                if (!state.history) state.history = [];
+
+                const activeCard = state.currentCard;
+                const isEscapableCard = activeCard && (activeCard.type === "Nivel 2" || activeCard.type === "Nivel 3");
+
+                state.history = [{
+                    player: localPlayerName,
+                    title: isEscapableCard ? `Comodín de Escape (canceló: ${activeCard.title})` : "Comodín de Escape",
+                    level: "Comodines",
+                    status: "Comodín usado"
+                }, ...state.history];
+
+                if (isEscapableCard) {
+                    state.currentCard = null;
+                }
+                return state;
+            });
+
+            setTimeout(() => {
+                if (limitReached) {
+                    showToast("Ya utilizaste tus comodines en esta partida.", 'error');
+                } else {
+                    showToast("Comodín usado. Sin puntos ni penalización.", 'success');
+                }
+            }, 50);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            if (!confirm("¿Reiniciar toda la partida y el mazo en la nube para todos?")) return;
+            gameRef.set(freshGameData(gameMode.value, Number(gameState.intensityLimit || 3)))
+                .then(() => showToast("Partida reiniciada para todos.", 'info'))
+                .catch(handleFirebaseError);
+        });
+
+        rulesBtn.addEventListener('click', () => rulesModal.classList.remove('hidden'));
+        closeModalBtn.addEventListener('click', () => rulesModal.classList.add('hidden'));
+        closeModalFooter.addEventListener('click', () => rulesModal.classList.add('hidden'));
+
+        historyBtn.addEventListener('click', () => historyModal.classList.remove('hidden'));
+        closeHistoryBtn.addEventListener('click', () => historyModal.classList.add('hidden'));
+        closeHistoryFooter.addEventListener('click', () => historyModal.classList.add('hidden'));
+
+        viewDeckBtn.addEventListener('click', () => deckModal.classList.remove('hidden'));
+        closeDeckBtn.addEventListener('click', () => deckModal.classList.add('hidden'));
+        closeDeckFooter.addEventListener('click', () => deckModal.classList.add('hidden'));
+
+        if (!localPlayerName) {
+            document.getElementById('tabRoomButton').click();
+            setTimeout(() => playerNameInput.focus(), 250);
+        }
+    </script>
+</body>
+</html>
+

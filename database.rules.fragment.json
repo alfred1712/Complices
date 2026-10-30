@@ -1,0 +1,32 @@
+{
+  "salas": {
+    "$room": {
+      "miembros": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "auth != null && auth.uid == $uid",
+          ".validate": "newData.val() == true"
+        }
+      },
+      "gameData": {
+        ".read": "auth != null && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true",
+        ".write": "auth != null && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true"
+      },
+      "mazos": {
+        "$deck": {
+          "gameData": {
+            ".read": "auth != null && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true",
+            ".write": "auth != null && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true"
+          }
+        }
+      },
+      "presences": {
+        ".read": "auth != null && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true",
+        "$uid": {
+          ".write": "auth != null && auth.uid == $uid && root.child('salas').child($room).child('miembros').child(auth.uid).val() == true",
+          ".validate": "newData.hasChildren(['name', 'ts']) && newData.child('name').isString() && newData.child('ts').isNumber()"
+        }
+      }
+    }
+  }
+}

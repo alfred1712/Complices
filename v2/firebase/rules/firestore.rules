@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ────────────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    function isAdultConfirmed() {
+      return request.auth.token.adultConfirmed == true;
+    }
+    function isRoomMember(roomCode) {
+      return isAuthenticated()
+        && isAdultConfirmed()
+        && get(/databases/$(database)/documents/rooms/$(roomCode)).data.members[request.auth.uid] == true;
+    }
+    function isValidCardStatus() {
+      return request.resource.data.status in ['completed', 'skipped', 'wildcard'];
+    }
+    function isValidGameMode() {
+      return request.resource.data.gameMode in ['pareja', 'grupo'];
+    }
+    function isValidIntensity() {
+      return request.resource.data.intensityLimit is int
+        && request.resource.data.intensityLimit >= 1
+        && request.resource.data.intensityLimit <= 3;
+    }
+
+    // ── Mazo de cartas (solo lectura para adultos autenticados) ────────
+    match /decks/{deckId} {
+      allow read:  if isAuthenticated() && isAdultConfirmed();
+      allow write: if false;
+
+      match /cards/{cardId} {
+        allow read:  if isAuthenticated() && isAdultConfirmed();
+        allow write: if false;
+      }
+    }
+
+    // ── Salas de juego ─────────────────────────────────────────────────
+    match /rooms/{roomCode} {
+      allow create: if isAuthenticated()
+        && isAdultConfirmed()
+        && isValidGameMode()
+        && isValidIntensity()
+        && request.resource.data.members[request.auth.uid] == true
+        && request.resource.data.status == 'active'
+        && request.resource.data.roomCode == roomCode;
+
+      allow read: if isRoomMember(roomCode);
+
+      allow update: if isRoomMember(roomCode)
+        && isValidGameMode()
+        && isValidIntensity()
+        && request.resource.data.deckVersion is int
+        && request.resource.data.status in ['active', 'finished', 'abandoned']
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.roomCode == resource.data.roomCode;
+
+      allow delete: if false;
+
+      // ── Historial de turnos ──────────────────────────────────────────
+      match /history/{turnId} {
+        allow read: if isRoomMember(roomCode);
+
+        allow create: if isRoomMember(roomCode)
+          && request.resource.data.playerUid == request.auth.uid
+          && isValidCardStatus()
+          && request.resource.data.cardId is int
+          && request.resource.data.deckId in ['coqueteo', 'sensaciones', 'intimidad']
+          && request.resource.data.player is string
+          && request.resource.data.player.size() >= 1
+          && request.resource.data.player.size() <= 40
+          && request.resource.data.title is string
+          && request.resource.data.title.size() <= 200;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // ── Perfil de usuario (fase 2) ─────────────────────────────────────
+    match /users/{uid} {
+      allow read:   if isAuthenticated() && request.auth.uid == uid;
+      allow create: if isAuthenticated()
+        && request.auth.uid == uid
+        && isAdultConfirmed()
+        && request.resource.data.uid == uid;
+      allow update: if isAuthenticated()
+        && request.auth.uid == uid
+        && !('adultConfirmed' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('adultConfirmedAt' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('uid' in request.resource.data.diff(resource.data).affectedKeys());
+      allow delete: if false;
+    }
+
+    // Denegar todo lo demás explícitamente
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
