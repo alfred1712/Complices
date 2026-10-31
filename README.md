@@ -24,6 +24,8 @@ APK de depuración: `android-app/app/build/outputs/apk/debug/app-debug.apk`. La 
 
 - `AGENTS.md`: normas de trabajo y traspaso entre agentes.
 - `docs/ESTADO_ACTUAL.md`: auditoría y validación más reciente.
+- `docs/ROADMAP_FUNCIONALIDADES.md`: diseño y dependencias de las mejoras A–D solicitadas.
+- `docs/ANALISIS_MODELO_NEGOCIO.md`: pros/contras, canales, pagos y propuesta de consola.
 - `MVP-OPERATIONS.md`: arquitectura activa, Firebase, seguridad, Hosting, APK y pruebas.
 - `WEB-HOSTING.md`: despliegues selectivos de Hosting.
 - `cartas-complices.md` / `.csv`: exportación del mazo activo.

@@ -14,3 +14,18 @@ Target: legacy-redirect
 Sitio: juego-cruzado (predeterminado, no eliminable)
 Destino: https://complices-en-juego.web.app
 HTTP verificado: ambos sitios respondieron 200; el legado sirve la página de mudanza.
+
+Despliegue Cómplices 1.16: 2026-10-30 13:21:25 -03:00
+Proyecto: juego-cruzado
+Target: complices
+URL: https://complices-en-juego.web.app
+HTTP: 200; funciones A-D incluidas en HTML publicado.
+
+Despliegue Cómplices 1.20: 2026-10-30 20:16:49 -03:00
+Proyecto: juego-cruzado
+Target: complices
+Sitio: complices-en-juego
+URL: https://complices-en-juego.web.app
+Firebase CLI: 15.34.2 (standalone Windows)
+HTTP/UI: pestaña pública recargada; DOM y pantalla confirman #stealCardBtn visible durante una carta activa de otra persona.
+Alcance: hosting:complices únicamente; sin reglas, Functions ni target legado.
