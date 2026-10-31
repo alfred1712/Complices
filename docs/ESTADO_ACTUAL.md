@@ -1,10 +1,10 @@
 # Estado actual de Cómplices
 
-Fecha: 30 de octubre de 2026. Esta nota registra cambios y verificaciones realizados en el checkout local; no sustituye la comprobación de la versión remota.
+Fecha: 31 de octubre de 2026. Esta nota registra cambios y verificaciones realizados en el checkout local; no sustituye la comprobación de la versión remota.
 
 ## Estado verificado
 
-- Rama `main`, release `v1.15` en commit `b76e3b8`; publicada en `origin/main` junto con el tag anotado `v1.15`. La actualización de esta nota de continuidad se registra inmediatamente después de ese release.
+- Rama `main`, commit `141b7a4` (`Release Complices 1.20`) publicado en `origin/main`. La producción se desplegó en 1.20; esta nota recoge ahora el trabajo local preparatorio 1.21.
 - Hosting nuevo: `complices-en-juego.web.app`. Firebase CLI confirmó la publicación del 30/10. El usuario comprobó desde un navegador externo que los sitios responden.
 - Firebase informa que `juego-cruzado` es el sitio Hosting predeterminado y rechaza su eliminación (HTTP 400: `Cannot delete default Hosting Site`). Se desplegó en su lugar la redirección a Cómplices, que conserva query/hash de sala cuando JavaScript está disponible y ya no sirve el juego.
 - APK de depuración 1.15 (`versionCode 16`) compilada con Gradle 9.7.1, Android Studio JBR 25 y AGP 9.3.2. Resultado: `BUILD SUCCESSFUL`; salida en `android-app/app/build/outputs/apk/debug/app-debug.apk`.
@@ -72,6 +72,49 @@ Fecha: 30 de octubre de 2026. Esta nota registra cambios y verificaciones realiz
 - Instalar el APK en los teléfonos requiere dispositivos ADB conectados; la compilación por sí sola no confirma instalación.
 - No hay firma release configurada. La APK generada es de depuración y no equivale a una release firmada para distribución pública.
 
+## Validación adicional — APK 1.21 en dos dispositivos (31/10/2026)
+
+- Se instaló el APK local 1.21 (`versionCode 22`, 932823 bytes) por ADB en Motorola Edge 40 Pro y Edge 40 Neo. `dumpsys package` confirmó `versionName=1.21`, `versionCode=22`, `minSdk=23` y `targetSdk=35` en ambos. Esta comprobación confirma la instalación, no la aprobación integral del MVP.
+- Se creó una sala desechable y se unieron ambos teléfonos con los nombres de prueba QA-Pro y QA-Neo. Las dos interfaces mostraron ambos participantes en línea y el modo Pareja, con turnos sincronizados de 30 segundos.
+- No quedó confirmada una tirada: durante la interacción el turno rotó antes de que pudiera verificarse el estado de una carta. Por lo tanto quedan pendientes, en una sala desechable, sorteo, revelado de la misma carta en ambos clientes, titularidad/robo, finalización/omisión, comodines y vencimiento del turno. No afirmar el funcionamiento interactivo hasta repetirlo con capturas contemporáneas.
+- Se leyó el código de `renderGameState`: `Robar este reto` conserva su función y se oculta al UID que tiene la carta (y cuando falta nombre local); se muestra a los demás participantes con nombre. No se pudo confirmar visualmente este control porque la prueba no produjo una carta activa.
+- La APK abrió en ambos y no se encontraron en el fragmento reciente de logcat `FATAL EXCEPTION`, `AndroidRuntime`, `Uncaught TypeError`, `ReferenceError` o `FirebaseError`. Es un chequeo breve, no una garantía de ausencia de errores.
+- No se pudo probar un tercer cliente en navegador; la interacción de navegador de esta sesión quedó bloqueada antes de llegar a una pantalla de prueba utilizable. La matriz APK–APK–Web queda pendiente. No se publicó Hosting ni se modificaron reglas Firebase.
+- La prueba usó solo la sala nueva desechable. Se detectó una sesión previa ajena al ensayo y se dejó intacta. No se borraron salas ni datos remotos.
+- El APK de producción/web sigue en la versión desplegada anteriormente; 1.21 es local y está instalada para QA. No hay commit ni push; el checkout `main` continúa en `141b7a4` con cambios locales previos preservados.
+
 ## Siguiente paso sugerido
 
 Probar A–D con una sala descartable y dos dispositivos en la misma versión, revisar duración de cartas repetidas y validar la imagen compartida en WebView. Mantener fuera de Git todo archivo ignorado o secreto y no desplegar reglas de base de datos.
+
+## Revisión técnica externa y mitigaciones — preparación 1.21
+
+Se analizó `Cómplices — Informe de revisión técnica.pdf` (30/10/2026, 13 páginas). Su hallazgo de discrepancia repo/producción estaba temporalmente desactualizado: después se publicó y subió el commit 1.20, que contiene las funciones citadas. El informe solo examinó las primeras ~1000 líneas del HTML y no revisó Android nativo ni la lógica final de turno/robo; sus conclusiones sobre esas áreas se trataron como hipótesis hasta inspeccionar este checkout.
+
+Verificado en el código activo:
+
+- El posible XSS era real: datos de presencia, cartas propias y el historial se interpolaban en `innerHTML`. Se añadió escape HTML en todos esos campos renderizados. El SVG decorativo ahora acepta únicamente IDs de mazo conocidos.
+- El WebView requiere acceso a `file:///android_asset/index.html`; no se deshabilitó `setAllowFileAccess`. Se cerraron accesos desde origen file hacia otros orígenes, `content://` y navegación de nivel superior fuera de los assets. No existe `addJavascriptInterface` en `MainActivity`.
+- Manifest ya usaba `usesCleartextTraffic="false"` y `exported` explícito; ahora además declara `allowBackup="false"`.
+- Android 1.21 (`versionCode 22`) compilada como `assembleDebug`; salida `android-app/app/build/outputs/apk/debug/app-debug.apk`. No se ha confirmado ADB/dispositivo en esta revisión: instalación y ejecución en teléfono siguen pendientes. Hosting permanece en 1.20 hasta un deploy autorizado.
+
+Pendientes deliberados por su impacto:
+
+- Las reglas desplegadas permiten a miembros reescribir `gameData` completo. Endurecerlas sin emulator y pruebas de compatibilidad puede romper creación, transacciones, cartas propias y juego en clientes antiguos; no se modificaron ni desplegaron.
+- App Check/API key requieren configuración en Firebase/Google Cloud y despliegue gradual; no se activaron.
+- CSP report-only necesita inventariar dominios reales de Tailwind CDN, Firebase SDK/Auth/RTDB y flujo Android; no se añadió una política no verificada.
+- No se migró Tailwind CDN, Firebase SDK, monolito HTML ni formato de estado; son cambios grandes de rendimiento/arquitectura que necesitan medición y etapa independiente.
+- No se añadió caducidad automática ni borrado remoto de salas: requiere política definida y mecanismo de servidor; no se tocaron datos de producción.
+- `FLAG_SECURE` queda para decisión explícita, pues impide capturas de pantalla.
+
+Validaciones locales completadas para 1.21: `node --check` del JavaScript inline, `git diff --check`, SHA-256 idéntico de las tres copias HTML y `gradle -p android-app assembleDebug` con Gradle 9.7.1/JBR de Android Studio (`BUILD SUCCESSFUL`). El APK de depuración se generó en `android-app/app/build/outputs/apk/debug/app-debug.apk` (930836 bytes al compilar). No se encontró `adb` en PATH; no se probó en teléfono, no se hicieron pruebas E2E de XSS ni multiusuario, y no se hizo deploy ni commit.
+
+## Cierre de pruebas y sincronización — 1.21 (31/10/2026)
+
+- Prueba interactiva en una sala desechable con Edge 40 Pro (QA-Pro) y Edge 40 Neo (QA-Neo): ambos aparecieron en línea, compartieron modalidad Pareja y reflejaron la misma carta 018 «Tres besos, tres caricias» de Nivel 1.
+- Se verificó «Robar este reto»: el Neo tomó la carta inicialmente asignada a Pro; ambos mostraron al nuevo titular y el turno cambió a QA-Neo. El nuevo titular vio Finalizar/Omitir; el otro cliente conservó «Robar este reto». Al finalizar, el turno avanzó.
+- Con carta activa de Nivel 1, «Usar comodín» apareció deshabilitado. No se validó el uso de comodín con Nivel 2/3, el decremento del saldo o un doble toque. Tampoco se confirmó expiración completa del temporizador.
+- El filtro puntual de logcat no detectó errores fatales o excepciones JavaScript comunes. No se conectó un tercer cliente web; APK–APK–Web permanece pendiente.
+- Gradle 9.7.1/JBR 25: `assembleDebug` completó correctamente. La APK 1.21 (`versionCode 22`, `minSdk 23`, `targetSdk 35`) se reinstaló en ambos Motorola; `dumpsys package` confirmó los metadatos en cada uno. Artefactos: `android-app/app/build/outputs/apk/debug/app-debug.apk` y copia local `Complices-1.21-debug.apk` (no subir a Git).
+- Firebase CLI confirmó el despliegue selectivo del target `hosting:complices` en `juego-cruzado`; el sitio `https://complices-en-juego.web.app/` respondió HTTP 200 y su HTML contiene la interfaz vigente y «Robar este reto». No se desplegaron reglas, Functions ni el target legado.
+- No se modificaron reglas RTDB ni se borraron salas. Las capturas de QA y `firepit-log.txt` se mantienen locales y fuera de Git.

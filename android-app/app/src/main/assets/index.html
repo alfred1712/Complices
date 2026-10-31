@@ -999,6 +999,12 @@
             }, 2600);
         }
 
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[character]);
+        }
+
         function renderList(container, items, emptyMessageHtml, templateFn) {
             if (!items || items.length === 0) {
                 container.innerHTML = emptyMessageHtml;
@@ -1023,8 +1029,9 @@
                 sensaciones: '<path d="M168 68c20 0 27-7 36-19 3-4 8-2 7 3l-4 12 19-20c4-4 9 0 6 4l-12 17 18-14c4-3 8 2 4 6l-15 14h-39c-9 0-15 2-20 5M272 68c-20 0-27-7-36-19-3-4-8-2-7 3l4 12-19-20c-4-4-9 0-6 4l12 17-18-14c-4-3-8 2-4 6l15 14h39c9 0 15 2 20 5" fill="none" stroke="#edc978" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M220 48v8m-4-4h8" stroke="#fff0c0" stroke-width="1.4"/>',
                 intimidad: '<path d="M220 76c-9-10-35-25-35-39 0-12 15-17 24-7l11 11 11-11c9-10 24-5 24 7 0 14-26 29-35 39Z" fill="none" stroke="#edc978" stroke-width="2"/><path d="M190 38c16 0 21 7 30 18 9-11 14-18 30-18M194 70c12-9 20-13 26-14 6 1 14 5 26 14" fill="none" stroke="#b8794d" stroke-width="1.2"/>'
             };
-            const uid = `complices-${instance}-${deckId}`;
-            return `<svg viewBox="0 0 440 110" role="img" aria-label="Ilustración ${deckId}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${uid}-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#482333"/><stop offset=".55" stop-color="#21151e"/><stop offset="1" stop-color="#121015"/></linearGradient><radialGradient id="${uid}-glow"><stop stop-color="#c28a50" stop-opacity=".3"/><stop offset="1" stop-color="#c28a50" stop-opacity="0"/></radialGradient></defs><rect width="440" height="110" rx="16" fill="url(#${uid}-bg)"/><ellipse cx="220" cy="55" rx="125" ry="75" fill="url(#${uid}-glow)"/><rect x="8" y="8" width="424" height="94" rx="12" fill="none" stroke="#b98a52" stroke-opacity=".4"/><path d="M28 55h103m178 0h103" stroke="#c3975a" stroke-opacity=".45"/><circle cx="220" cy="55" r="38" fill="#160f16" fill-opacity=".42" stroke="#b98a52" stroke-opacity=".46"/><path d="M220 13v8M220 89v8M28 55h8m368 0h8" stroke="#edc978" stroke-opacity=".8"/><path d="M220 44l2 7 7 2-7 2-2 7-2-7-7-2 7-2Z" fill="#edc978" opacity=".75"/>${motifs[deckId] || motifs.coqueteo}<circle cx="54" cy="32" r="1.5" fill="#f0d798"/><circle cx="386" cy="78" r="1.5" fill="#f0d798"/><circle cx="375" cy="30" r="1" fill="#f0d798"/><circle cx="64" cy="80" r="1" fill="#f0d798"/></svg>`;
+            const safeDeckId = Object.prototype.hasOwnProperty.call(motifs, deckId) ? deckId : 'coqueteo';
+            const uid = `complices-${instance}-${safeDeckId}`;
+            return `<svg viewBox="0 0 440 110" role="img" aria-label="Ilustración ${safeDeckId}" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="${uid}-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#482333"/><stop offset=".55" stop-color="#21151e"/><stop offset="1" stop-color="#121015"/></linearGradient><radialGradient id="${uid}-glow"><stop stop-color="#c28a50" stop-opacity=".3"/><stop offset="1" stop-color="#c28a50" stop-opacity="0"/></radialGradient></defs><rect width="440" height="110" rx="16" fill="url(#${uid}-bg)"/><ellipse cx="220" cy="55" rx="125" ry="75" fill="url(#${uid}-glow)"/><rect x="8" y="8" width="424" height="94" rx="12" fill="none" stroke="#b98a52" stroke-opacity=".4"/><path d="M28 55h103m178 0h103" stroke="#c3975a" stroke-opacity=".45"/><circle cx="220" cy="55" r="38" fill="#160f16" fill-opacity=".42" stroke="#b98a52" stroke-opacity=".46"/><path d="M220 13v8M220 89v8M28 55h8m368 0h8" stroke="#edc978" stroke-opacity=".8"/><path d="M220 44l2 7 7 2-7 2-2 7-2-7-7-2 7-2Z" fill="#edc978" opacity=".75"/>${motifs[safeDeckId]}<circle cx="54" cy="32" r="1.5" fill="#f0d798"/><circle cx="386" cy="78" r="1.5" fill="#f0d798"/><circle cx="375" cy="30" r="1" fill="#f0d798"/><circle cx="64" cy="80" r="1" fill="#f0d798"/></svg>`;
         }
 
         function populateDeckModal() {
@@ -1049,10 +1056,10 @@
             renderList(deckListContainer, selectedCards, '<p class="text-center text-slate-500 py-6">Este nivel no tiene cartas disponibles en el modo actual.</p>', (card) => `
                 <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col gap-1.5">
                     <div class="flex justify-between items-center">
-                        <span class="font-bold text-white text-xs">${formatCardNumber(card)}. ${card.title}</span>
-                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColorFor(card.type)}">${card.type === 'Comodín' ? card.level : `${deckLabels[card.deckId]} · ${card.type}`}</span>
+                    <span class="font-bold text-white text-xs">${escapeHtml(formatCardNumber(card))}. ${escapeHtml(card.title)}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${badgeColorFor(card.type)}">${escapeHtml(card.type === 'Comodín' ? card.level : `${deckLabels[card.deckId] || ''} · ${card.type}`)}</span>
                     </div>
-                    <p class="text-slate-300 text-[11px] leading-relaxed">${cardDescriptionForMode(card)}</p>
+                    <p class="text-slate-300 text-[11px] leading-relaxed">${escapeHtml(cardDescriptionForMode(card))}</p>
                 </div>
             `);
         }
@@ -1317,7 +1324,7 @@
                 `<span class="text-slate-500 italic">Nadie conectado activamente</span>`,
                 (entry) => `
                     <span class="bg-slate-950 border border-slate-800 px-2 py-1 rounded-md text-slate-200 flex items-center gap-1">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${entry.name}
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> ${escapeHtml(entry.name)}
                     </span>
                 `
             );
@@ -1432,7 +1439,7 @@
                     const isDepleted = restantes === 0;
                     return `
                         <div class="wildcard-badge ${isDepleted ? 'depleted' : ''}">
-                            <span><strong>${playerName}</strong></span>
+                            <span><strong>${escapeHtml(playerName)}</strong></span>
                             <span>⭐ ${restantes}/${LIMITE_COMODINES}</span>
                         </div>
                     `;
@@ -1452,11 +1459,11 @@
                     return `
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1">
                             <div class="flex justify-between text-[11px]">
-                                <span class="font-bold text-rose-500">${item.player}</span>
+                                <span class="font-bold text-rose-500">${escapeHtml(item.player)}</span>
                                 ${statusBadge}
                             </div>
-                            <p class="font-semibold text-white">${item.title}</p>
-                            <span class="text-[10px] text-slate-500">${item.level}</span>
+                            <p class="font-semibold text-white">${escapeHtml(item.title)}</p>
+                            <span class="text-[10px] text-slate-500">${escapeHtml(item.level)}</span>
                         </div>
                     `;
                 }

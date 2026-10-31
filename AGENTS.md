@@ -1,5 +1,7 @@
 # Instrucciones para agentes de Cómplices
 
+Cómplices es un juego web para adultos con APK Android basado en WebView. El objetivo es mantener un MVP funcional, sincronizado entre navegador y APK, y documentar toda modificación relevante. `index5-final-v4.html` es la fuente canónica.
+
 ## Antes de trabajar
 
 - Lee este archivo, `README.md`, `docs/ESTADO_ACTUAL.md` y la guía relacionada con la tarea.
@@ -22,3 +24,6 @@
 - En cambios web, despliega únicamente con `firebase deploy --only hosting:complices --project juego-cruzado`; el target `legacy-redirect` solo sirve para actualizar la página de redirección solicitada.
 - Al terminar, actualiza `docs/ESTADO_ACTUAL.md` y deja un resumen que incluya objetivo, estado inicial, archivos, cambios, validaciones y resultados, limitaciones, pendientes, recomendación siguiente y estado de Git.
 - No hagas commit, tag, push, publicación externa ni acción remota destructiva salvo que el usuario lo solicite expresamente.
+- No despliegues Hosting sin autorización expresa en la tarea actual. Si está autorizado, usa solo el target indicado arriba y registra resultado verificable.
+- Al recibir una transferencia, contrasta primero este archivo, `README.md`, `docs/ESTADO_ACTUAL.md`, el resto de continuidad, Git y el código real. Informa diferencias antes de ampliar o reescribir arquitectura.
+- Para entregar a otro agente, actualiza `docs/ESTADO_ACTUAL.md` y el documento principal `docs/TRANSFERENCIA_AGENTE_C.md`; distingue implementación, validación, publicación y supuestos. Conserva historial útil y trabajo local sin confirmar.

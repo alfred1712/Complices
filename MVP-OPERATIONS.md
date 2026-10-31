@@ -1,6 +1,6 @@
 # Cómplices — operación del MVP
 
-Estado revisado: 30 de octubre de 2026. El checkout local y Hosting `complices-en-juego` contienen la versión 1.20. No constituye autorización para desplegar reglas de base de datos.
+Estado revisado: 30 de octubre de 2026. El commit `141b7a4` contiene la versión 1.20 desplegada; el checkout local ahora prepara la 1.21 con mitigaciones XSS y endurecimiento del WebView. Hosting sigue en 1.20 hasta un deploy autorizado. No constituye autorización para desplegar reglas de base de datos.
 
 ## Código activo y nombres
 
@@ -15,6 +15,7 @@ Estado revisado: 30 de octubre de 2026. El checkout local y Hosting `complices-e
 - Cliente: HTML, CSS y JavaScript en un único archivo; Firebase JavaScript SDK compat; Firebase Authentication anónima y Realtime Database.
 - Datos sincronizados: código de sala, miembros anónimos, nombres visibles, modo, nivel de intensidad, mazo disponible, carta activa, historial, comodines y presencia. La app no ofrece chat ni transferencia de contenido multimedia.
 - La confirmación de edad actual es una declaración del cliente almacenada en `sessionStorage`; no es una validación de edad en el servidor.
+- Los nombres de presencia, cartas propias y textos del historial proceden del estado compartido de la sala. La versión local 1.21 los escapa al construir fragmentos HTML y limita las ilustraciones SVG a identificadores de mazo conocidos.
 - El contenido de cartas está versionado dentro del HTML. La exportación vigente se conserva en [`cartas-complices.md`](cartas-complices.md) y [`cartas-complices.csv`](cartas-complices.csv).
 
 ## Realtime Database: rutas y reglas
@@ -72,7 +73,14 @@ En este equipo, Firebase CLI 15.34.2 se recuperó el 30/10/2026 usando la distri
 
 ## Compilar e instalar Android
 
-Configuración activa en `android-app/app/build.gradle`: AGP 9.3.2, compile SDK 37, min SDK 23, target SDK 35, `applicationId com.chispa.app`. Versión local actual 1.20 (`versionCode 21`), compilada correctamente con Gradle 9.7.1 y Android Studio JBR 25. La APK queda en `android-app/app/build/outputs/apk/debug/app-debug.apk`; copia práctica `Complices-1.20-debug.apk` en la raíz, ignorada por Git. Un checkout limpio necesita Android Studio/SDK configurados y una instalación compatible de Gradle.
+Configuración activa en `android-app/app/build.gradle`: AGP 9.3.2, compile SDK 37, min SDK 23, target SDK 35, `applicationId com.chispa.app`. Versión local 1.21 (`versionCode 22`) compilada correctamente con Gradle 9.7.1 y Android Studio JBR 25: `BUILD SUCCESSFUL`. La APK queda en `android-app/app/build/outputs/apk/debug/app-debug.apk`; no versionar APKs. Un checkout limpio necesita Android Studio/SDK configurados y una instalación compatible de Gradle.
+
+### Nota de endurecimiento 1.21
+
+- `MainActivity` conserva `setAllowFileAccess(true)` porque la interfaz corre desde `file:///android_asset/index.html`; deshabilita acceso desde archivos a otros orígenes, acceso a `content://`, y bloquea navegación principal fuera del directorio de assets. No registra `addJavascriptInterface`; el tráfico mixto permanece prohibido.
+- El manifest declara `allowBackup="false"`; `usesCleartextTraffic="false"` y `exported` explícito ya estaban configurados.
+- La mitigación XSS escapa texto dinámico de presencia, mazo, comodines e historial antes de interpolarlo en los templates. El HTML dinámico restante se limita a contenido estático local/SVG con IDs de mazo permitidos.
+- No se activó `FLAG_SECURE`: bloquearía capturas del dispositivo y afecta QA/uso del reporte. Es una decisión de privacidad/producto pendiente.
 
 ```powershell
 gradle -p android-app assembleDebug
@@ -87,6 +95,7 @@ Para una APK distribuible, generar una **release firmada** desde Android Studio 
 
 - Ahora no hay pruebas unitarias/instrumentadas declaradas para el cliente activo. Una compilación correcta prueba empaquetado, no interacción ni backend.
 - Comprobaciones automáticas disponibles sin añadir dependencias: validar JSON de Firebase, comprobar coincidencia SHA-256 de las tres copias HTML y compilar `assembleDebug`.
+- Revisión técnica del 30/10/2026: discrepancia entre rama/producción descrita por el PDF ya no aplica al commit 1.20 que se desplegó y subió a `main`; el informe revisó solo parte del HTML y no inspeccionó Android nativo ni la lógica final de turnos. Se verificó XSS potencial en templates con nombres/cartas/historial y se mitigó en 1.21. Reglas amplias RTDB, ausencia de App Check, Tailwind CDN y ciclo de vida de salas continúan pendientes; no se modificaron reglas ni recursos remotos.
 - En 1.17, comprobar con una sala descartable que las cartas propias aparecen en «Ver todas las cartas» y luego salen en el juego; ajustar por separado los sliders de ambiente y SFX; probar legibilidad móvil y observar la animación de revelado. Los sliders solo gobiernan el volumen producido por la app, mientras que Android/iOS conservan el control físico del volumen del dispositivo.
 - A partir de 1.18, el ambiente musical no existe en el cliente (silencio por defecto; SFX siguen opcionales). Nueva apertura crea sala vacía sin borrar el estado antiguo; compartir/abrir un enlace `?sala=` conserva la sesión grupal. El 30/10/2026 se probó en Moto Edge 40 Pro: girar con una carta activa conservó PID y Activity, cambió a `ROTATION_90` y volvió a `ROTATION_0` con los ajustes originales restaurados.
 - Smoke test de dispositivo único: abre, confirma mayoría de edad, inicia sesión, fija nombre, comprueba sala, mazos, ajustes, reglas, historial y reinicio solo en una sala de prueba.
@@ -99,6 +108,19 @@ Para una APK distribuible, generar una **release firmada** desde Android Studio 
 - No usar producción para probar reglas ni reinicios. El cliente tiene el endpoint Firebase de producción incrustado y el `firebase.json` raíz no configura emuladores de RTDB; una prueba local de Hosting por sí sola no aísla las escrituras del backend.
 - Antes de cambios futuros: comprobar `git status`, conservar el diff, validar copias, compilar y usar una sala desechable. Para recuperar Hosting, usar el historial de releases del sitio afectado en Firebase Console; restaurar el APK anterior desde el respaldo de releases.
 
+### Resultado de prueba de dos Androids — 31/10/2026
+
+- APK local 1.21 / `versionCode 22` instalada en Edge 40 Pro y Edge 40 Neo; `dumpsys package` confirmó versión en ambos. El artefacto debug mide 932823 bytes en `android-app/app/build/outputs/apk/debug/app-debug.apk`.
+- En una sala nueva desechable, ambos teléfonos aparecieron como QA-Pro y QA-Neo en línea. Los dos mostraron modo Pareja y el mismo selector de turno de 30 segundos.
+- La prueba no consiguió fijar un instante con carta activa: el plazo rotó durante la interacción. No se consideran aprobados el sorteo, la carta compartida, el botón de robo, la resolución del turno ni los comodines. Repetir con más tiempo o con una sala aislada y capturas de ambos clientes tomadas inmediatamente.
+- Lectura estática del cliente: el botón `stealCardBtn` se oculta al titular de la carta y cuando no hay nombre local; en los demás dispositivos queda disponible. La acción no fue ejecutada en esta prueba. Mantener esa opción; no sustituirla por una eliminación del control.
+- No se encontró un error fatal ni una excepción JavaScript común en las últimas 3000 líneas consultadas de logcat del Edge 40 Pro. El Edge 40 Neo abrió y mostró la sala compartida, aunque el filtro de logcat se ejecutó en el Pro.
+- Cliente web adicional no probado. Sin deploy, cambios de reglas, commit ni push en esta ronda.
+
 ## Alcance de la carpeta v2
 
 Los documentos, reglas y funciones que estuvieron bajo `v2/` describían una arquitectura futura (Firestore, Custom Claims, App Check y Functions) y contenían cantidades de cartas obsoletas. No eran parte del MVP desplegado ni código Kotlin/Web listo para compilar. Los hallazgos compatibles sobre `gameData` y la declaración de edad quedan resumidos aquí. Se adoptaron de la configuración Hosting de v2 cabeceras defensivas que no cambian el flujo; se dejó fuera la CSP propuesta hasta probar cada recurso del cliente. Las reglas, funciones y Firestore de v2 no se integraron.
+
+### Cierre de pruebas y publicación 1.21 — 31/10/2026
+
+Se confirmó en Edge 40 Pro y Edge 40 Neo (sala desechable) presencia compartida, una misma carta Nivel 1, transferencia de «Robar este reto» al no titular y avance de turno al finalizar. El comodín sin carta está deshabilitado. Sigue pendiente comodín sobre Nivel 2/3, validar el saldo/doble toque, expiración completa de turno y cliente web tercero. La APK 1.21 fue recompilada e instalada en los dos equipos. El sitio `complices-en-juego.web.app` recibió solo el target `hosting:complices` y respondió HTTP 200. Reglas Firebase sin cambios. Verificar la sección de estado Git más reciente antes de nuevas acciones.
