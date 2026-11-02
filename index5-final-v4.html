@@ -57,7 +57,7 @@
         body { background:radial-gradient(ellipse at 50% -10%,#472334 0%,var(--ink) 58%) fixed!important;color:var(--cream)!important; }
         header { border-color:#70533d!important; }
         header h1 { margin:0!important;line-height:0; }
-        .brand-logo { display:block;width:min(198px,60vw);height:132px;margin:0 auto 2px;object-fit:contain; }
+        .brand-logo { display:block;width:min(270px,72vw);height:auto;max-height:174px;margin:0 auto 2px;object-fit:contain; }
         .header-audio { position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 8px);display:flex;gap:6px; }
         .header-audio button { border:1px solid #70533d;border-radius:999px;background:#241720;color:#f1dfb1;padding:6px 9px;font-size:10px;font-weight:800; }
         header h1 { color:var(--gold)!important;font-family:Georgia,serif;letter-spacing:.18em; }
@@ -155,7 +155,7 @@
         <div class="header-audio" aria-label="Audio del juego">
             <button id="sfxToggle" type="button" aria-pressed="false" aria-label="Activar efectos de sonido">🔇 SFX</button>
         </div>
-        <h1 aria-label="Cómplices"><img class="brand-logo" src="./complices-logo-transparent.svg" alt="Cómplices"></h1>
+        <h1 aria-label="Cómplices"><img class="brand-logo" src="./complices-logo-banner-blended.png" alt="Cómplices"></h1>
         <p class="text-xs text-slate-400">Solo para mayores de 18 · Pareja o Grupo</p>
     </header>
 
@@ -195,10 +195,14 @@
                 <div id="roulettePanel" class="roulette-panel hidden" aria-live="polite"><div id="rouletteWheel" class="roulette-wheel"><div class="roulette-core">✦</div></div><div class="roulette-copy"><span>NIVEL Y CARTA AL AZAR</span><strong id="rouletteOptionTitle">Preparando la ruleta…</strong></div></div>
                 <div id="cardArt" class="deck-illustration" aria-hidden="true"></div>
                 <div>
-                    <span id="cardLevel" class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Listos para jugar</span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span id="cardLevel" class="text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-slate-800 text-slate-300">Listos para jugar</span>
+                        <button id="currentFavoriteBtn" type="button" class="hidden rounded-full border border-amber-700/60 px-3 py-1 text-xs text-amber-200 hover:bg-amber-950/60" aria-label="Guardar carta favorita" aria-pressed="false">☆ Favorito</button>
+                    </div>
                     <h2 id="cardTitle" class="text-lg font-bold text-white mt-3">¡Que empiece el juego!</h2>
                     <p id="cardDrawnBy" class="text-[10px] text-slate-500 mt-1 hidden"></p>
                 </div>
+                <p id="groupAssignmentBadge" class="hidden w-fit rounded-full border border-amber-700/60 bg-amber-950/40 px-3 py-1.5 text-xs font-bold text-amber-100" aria-live="polite"></p>
                 <p id="cardDescription" class="text-sm text-slate-300 my-4 leading-relaxed">Giren la ruleta y dejen que la sala decida el reto.</p>
                 <div class="flex justify-between items-center text-xs text-slate-400 border-t border-slate-800 pt-3">
                     <span id="cardType" class="font-semibold text-rose-400">Mazo compartido</span>
@@ -243,6 +247,13 @@
                 <p id="intensityHelp" class="text-[11px] text-slate-400 mt-2 leading-relaxed">La ruleta elige al azar entre los niveles habilitados y aumenta la intensidad gradualmente. Es un ajuste común para toda la sala y se fija al comenzar.</p>
             </div>
             <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+                <label for="accessoriesToggle" class="flex items-center justify-between gap-3 text-sm font-bold text-amber-100">
+                    <span>🎛️ Modo Accesorios Caseros</span>
+                    <input id="accessoriesToggle" type="checkbox" class="h-5 w-5 accent-amber-500" aria-describedby="accessoriesHelp">
+                </label>
+                <p id="accessoriesHelp" class="text-[11px] text-slate-400 mt-2 leading-relaxed">Añade a algunos retos de Nivel 2 y 3 una sugerencia aleatoria de objeto cotidiano. El modificador queda guardado en la carta para que toda la sala vea el mismo texto.</p>
+            </div>
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
                 <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Volumen de audio</h2>
                 <label for="sfxVolume" class="block text-xs text-slate-200 mt-2">Efectos de sonido <span id="sfxVolumeValue">70%</span></label>
                 <input id="sfxVolume" class="audio-slider" type="range" min="0" max="100" value="70" aria-label="Volumen de los efectos de sonido">
@@ -266,6 +277,24 @@
                 </div>
                 <p id="currentPlayerDisplay" class="text-xs text-rose-300 mt-3 font-semibold">Jugador en este teléfono: Ninguno configurado</p>
             </div>
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
+                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Perfil para asignar retos</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label class="block text-xs text-slate-200">Sexo
+                        <select id="playerSex" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
+                            <option value="">Seleccionar…</option><option value="hombre">Hombre</option><option value="mujer">Mujer</option><option value="no-indicar">Prefiero no indicar</option>
+                        </select>
+                    </label>
+                    <label class="block text-xs text-slate-200">Orientación
+                        <select id="playerOrientation" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
+                            <option value="">Seleccionar…</option><option value="heterosexual">Heterosexual</option><option value="bisexual">Bisexual</option><option value="gay">Gay / lesbiana</option><option value="pansexual">Pansexual</option><option value="abierta">Abierta · cualquier género</option><option value="no-indicar">Prefiero no indicar</option>
+                        </select>
+                    </label>
+                </div>
+                <button id="saveProfileBtn" type="button" class="w-full mt-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-100">Guardar perfil de esta sala</button>
+                <p id="profileStatus" class="text-[11px] text-slate-400 mt-2" role="status" aria-live="polite">Configura ambos campos para permitir asignaciones compatibles.</p>
+                <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">El perfil se sincroniza como presencia temporal y lo ven los participantes de esta sala. Si eliges «Prefiero no indicar», no entrarás en asignaciones aleatorias.</p>
+            </div>
             <p class="text-[11px] text-center text-slate-500 leading-relaxed">Solo mayores de 18. Se puede pasar cualquier carta sin explicaciones ni penalización.</p>
         </section>
 
@@ -286,6 +315,13 @@
                 <button id="closeGameBtn" class="bg-slate-900 hover:bg-slate-800 border border-amber-900/60 text-amber-200 text-xs font-bold py-3 rounded-xl">🌙 Cerrar partida y ver resumen</button>
                 <button id="resetBtn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-400 text-xs font-bold py-3 rounded-xl">🔄 Reiniciar partida en la nube</button>
             </div>
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mt-4">
+                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-1">⭐ Retos Favoritos de la Noche</h2>
+                <p class="text-[11px] text-slate-400 mb-3">Colección de esta partida, sincronizada con quienes están en la sala.</p>
+                <div id="favoritesListContainer" class="space-y-2 text-xs text-slate-300">
+                    <p class="text-center text-slate-500 italic py-3">Todavía no hay retos favoritos.</p>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -304,6 +340,7 @@
             </button>
         </div>
     </div>
+
 
     <div id="summaryModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[120] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
         <div class="summary-share-card max-w-sm w-full p-6 text-center">
@@ -464,6 +501,12 @@
         const connectionRef = db.ref('.info/connected');
 
         const LIMITE_COMODINES = 2;
+        const HOME_ACCESSORY_MODIFIERS = [
+            'Si tienen una bufanda o prenda suave a mano, pueden usarla como venda durante el reto.',
+            'Si les resulta cómodo, añadan un cubito de hielo envuelto en una tela y pásenlo brevemente sobre la piel.',
+            'Pueden sumar una pequeña cantidad de crema o aceite corporal para cambiar la sensación del contacto.',
+            'Prueben el reto con una toalla suave o una tela de textura distinta.'
+        ];
 
         // ============================================================
         // Mazo
@@ -671,8 +714,11 @@
         }
         function cardDescriptionForMode(card) {
             const canonicalCard = deck.find(item => Number(item.id) === Number(card.id) && (!item.deckId || !card.deckId || item.deckId === card.deckId));
-            if (gameMode.value === 'grupo') return card.groupDesc || canonicalCard?.groupDesc || card.desc || canonicalCard?.desc || '';
-            return card.desc || canonicalCard?.desc || '';
+            const description = gameMode.value === 'grupo'
+                ? card.groupDesc || canonicalCard?.groupDesc || card.desc || canonicalCard?.desc || ''
+                : card.desc || canonicalCard?.desc || '';
+            const modifier = String(card.accessoryModifier || '').trim();
+            return modifier ? `${description} ${modifier}` : description;
         }
         const gameMode = document.getElementById('gameMode');
         const intensityLimit = document.getElementById('intensityLimit');
@@ -693,6 +739,8 @@
                 customCards: [],
                 scores: {},
                 history: [],
+                favorites: {},
+                accessoriesEnabled: false,
                 currentCard: null,
                 wildcardUsage: {},
                 closedAt: null,
@@ -709,8 +757,77 @@
         const TURN_DURATION_SECONDS = 30;
         function activePresenceEntries(now = Date.now()) {
             return Object.entries(presences)
-                .map(([uid, presence]) => ({ uid, name: presence?.name || uid, ts: typeof presence === 'number' ? presence : presence?.ts }))
+                .map(([uid, presence]) => ({
+                    uid,
+                    name: presence?.name || uid,
+                    sex: presence?.sex || '',
+                    orientation: presence?.orientation || '',
+                    ts: typeof presence === 'number' ? presence : presence?.ts
+                }))
                 .filter(entry => Number.isFinite(entry.ts) && now - entry.ts < 15000);
+        }
+        function profileAccepts(profile, other) {
+            if (!profile?.sex || !other?.sex || profile.sex === 'no-indicar' || other.sex === 'no-indicar') return false;
+            switch (profile.orientation) {
+                case 'heterosexual': return profile.sex !== other.sex;
+                case 'gay': return profile.sex === other.sex;
+                case 'bisexual':
+                case 'pansexual':
+                case 'abierta': return true;
+                default: return false;
+            }
+        }
+        function compatibleParticipantPairs(entries = activePresenceEntries()) {
+            const pairs = [];
+            for (let first = 0; first < entries.length; first++) {
+                for (let second = first + 1; second < entries.length; second++) {
+                    const a = entries[first];
+                    const b = entries[second];
+                    if (a.uid !== b.uid && profileAccepts(a, b) && profileAccepts(b, a)) pairs.push([a, b]);
+                }
+            }
+            return pairs;
+        }
+        function hasCompatibleParticipantPair(entries = activePresenceEntries()) {
+            if (gameMode.value === 'pareja' && entries.length > 2) return false;
+            return compatibleParticipantPairs(entries).length > 0;
+        }
+        function updateGameModeHelp(entries = activePresenceEntries()) {
+            const help = document.getElementById('gameModeHelp');
+            const needsGroupMode = entries.length > 2;
+            if (needsGroupMode && gameMode.value === 'pareja') {
+                help.textContent = `Hay ${entries.length} participantes conectados. La sala usa Grupo; Pareja admite hasta 2.`;
+                return;
+            }
+            if (entries.length < 2) {
+                help.textContent = 'Conecta al menos dos participantes y configura sus perfiles para habilitar la ruleta.';
+                return;
+            }
+            const missingProfiles = entries.some(entry => !entry.sex || !entry.orientation || entry.sex === 'no-indicar' || entry.orientation === 'no-indicar');
+            if (!hasCompatibleParticipantPair(entries)) {
+                help.textContent = missingProfiles
+                    ? 'Configuren sexo y orientación en Ajustes para habilitar asignaciones compatibles.'
+                    : 'Los perfiles de esta sala no forman una asignación compatible; ajusten las preferencias en Ajustes.';
+                return;
+            }
+            help.textContent = needsGroupMode
+                ? `Hay ${entries.length} participantes. Grupo asigna cada reto entre perfiles compatibles.`
+                : 'La ruleta requiere perfiles compatibles y asigna los retos según sus preferencias.';
+        }
+        function randomGroupAssignment(mode, drawerUid, drawerName) {
+            if (mode !== 'grupo') return {};
+            const roster = activePresenceEntries();
+            if (drawerUid && !roster.some(entry => entry.uid === drawerUid)) {
+                roster.push({ uid: drawerUid, name: drawerName || drawerUid, sex: localSex, orientation: localOrientation, ts: sharedNow() });
+            }
+            const pairs = compatibleParticipantPairs(roster);
+            if (!pairs.length) return {};
+            const [first, second] = pairs[Math.floor(Math.random() * pairs.length)];
+            const [executor, targetPlayer] = Math.random() < 0.5 ? [first, second] : [second, first];
+            return {
+                executor: { uid: executor.uid, name: executor.name },
+                targetPlayer: { uid: targetPlayer.uid, name: targetPlayer.name }
+            };
         }
         function nextTurnUidAfter(currentUid, roster = activePresenceEntries()) {
             const ordered = [...roster].sort((a, b) => a.name.localeCompare(b.name, 'es') || a.uid.localeCompare(b.uid));
@@ -767,13 +884,16 @@
             status.textContent = player.uid === auth.currentUser?.uid
                 ? `Tu turno para girar · ${formatClock(remaining)}`
                 : `Turno de ${player.name} · ${formatClock(remaining)}`;
-            drawBtn.disabled = !roomReady || !isOnline || !localPlayerName || !isMyTurn() || Boolean(gameState.closedAt);
+            drawBtn.disabled = !roomReady || !isOnline || !localPlayerName || !isMyTurn() || !hasCompatibleParticipantPair() || Boolean(gameState.closedAt);
             if (remaining <= 0) ensureCurrentTurn();
         }
 
         let gameState = freshGameData();
         let presences = {};
         let localPlayerName = localStorage.getItem('complices_localPlayer') || "";
+        const profileStoragePrefix = `complices_profile_${roomCode}_`;
+        let localSex = localStorage.getItem(`${profileStoragePrefix}sex`) || '';
+        let localOrientation = localStorage.getItem(`${profileStoragePrefix}orientation`) || '';
         let hasObservedInitialGameState = false;
         let previousCardWasActive = false;
         let lastRenderedDrawId = null;
@@ -814,6 +934,9 @@
         const cardTitle = document.getElementById('cardTitle');
         const cardDescription = document.getElementById('cardDescription');
         const cardDrawnBy = document.getElementById('cardDrawnBy');
+        const currentFavoriteBtn = document.getElementById('currentFavoriteBtn');
+        const groupAssignmentBadge = document.getElementById('groupAssignmentBadge');
+        const accessoriesToggle = document.getElementById('accessoriesToggle');
         const cardType = document.getElementById('cardType');
         const challengeTimer = document.getElementById('challengeTimer');
         const timerDisplay = document.getElementById('timerDisplay');
@@ -959,6 +1082,12 @@
         const playerNameInput = document.getElementById('playerNameInput');
         const savePlayerBtn = document.getElementById('savePlayerBtn');
         const currentPlayerDisplay = document.getElementById('currentPlayerDisplay');
+        const playerSex = document.getElementById('playerSex');
+        const playerOrientation = document.getElementById('playerOrientation');
+        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        const profileStatus = document.getElementById('profileStatus');
+        playerSex.value = localSex;
+        playerOrientation.value = localOrientation;
 
         const activePlayersList = document.getElementById('activePlayersList');
         const wildcardPlayersList = document.getElementById('wildcardPlayersList');
@@ -968,6 +1097,7 @@
         const closeHistoryBtn = document.getElementById('closeHistoryBtn');
         const closeHistoryFooter = document.getElementById('closeHistoryFooter');
         const historyListContainer = document.getElementById('historyListContainer');
+        const favoritesListContainer = document.getElementById('favoritesListContainer');
 
         const rulesBtn = document.getElementById('rulesBtn');
         const rulesModal = document.getElementById('rulesModal');
@@ -1007,6 +1137,75 @@
             return String(value ?? '').replace(/[&<>"']/g, character => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             })[character]);
+        }
+
+        function favoriteKey(card) {
+            const safe = value => String(value ?? '').replace(/[.#$\/\[\]]/g, '_');
+            return `${safe(card?.deckId || 'custom')}_${safe(card?.id ?? card?.title ?? 'reto')}`;
+        }
+
+        function favoriteSnapshot(card) {
+            return {
+                id: card.id,
+                deckId: card.deckId || 'coqueteo',
+                cardNumber: card.cardNumber ?? null,
+                title: String(card.title || 'Reto favorito'),
+                desc: String(card.desc || ''),
+                groupDesc: String(card.groupDesc || ''),
+                level: String(card.level || ''),
+                type: String(card.type || ''),
+                isCustom: Boolean(card.isCustom),
+                accessoryModifier: card.accessoryModifier || null
+            };
+        }
+
+        function normalizeFavorites(value) {
+            if (Array.isArray(value)) {
+                return Object.fromEntries(value.filter(Boolean).map(card => [favoriteKey(card), favoriteSnapshot(card)]));
+            }
+            return value && typeof value === 'object' ? { ...value } : {};
+        }
+
+        function isFavoriteCard(card, favorites = gameState.favorites) {
+            return Boolean(card && normalizeFavorites(favorites)[favoriteKey(card)]);
+        }
+
+        function resolveHistoryCard(item) {
+            if (!item) return null;
+            const title = String(item.title || '').replace(/^\s*(?:\d+|★)\.\s*/, '').trim();
+            const candidates = [...listFromFirebase(gameState.customCards), ...deck];
+            const matchesId = candidates.filter(card => item.cardId != null && String(card.id) === String(item.cardId)
+                && (!item.deckId || !card.deckId || card.deckId === item.deckId));
+            const card = matchesId.find(candidate => title && (title === candidate.title || title.includes(candidate.title)))
+                || matchesId[0]
+                || candidates.find(candidate => title && title === candidate.title);
+            return card ? { ...card, accessoryModifier: item.accessoryModifier || card.accessoryModifier || null } : null;
+        }
+
+        function toggleFavorite(card) {
+            if (!card || !roomReady || !isOnline) {
+                showToast('Conecta la sala para guardar o quitar favoritos.', 'info');
+                return;
+            }
+            const snapshot = favoriteSnapshot(card);
+            const key = favoriteKey(snapshot);
+            let added = false;
+            gameRef.transaction(state => {
+                if (!state) return state;
+                const favorites = normalizeFavorites(state.favorites);
+                if (favorites[key]) {
+                    delete favorites[key];
+                } else {
+                    favorites[key] = snapshot;
+                    added = true;
+                }
+                state.favorites = favorites;
+                return state;
+            }, (error, committed) => {
+                if (error) { handleFirebaseError(error); return; }
+                if (!committed) { showToast('No se pudo actualizar el favorito; intenta de nuevo.', 'info'); return; }
+                showToast(added ? 'Reto guardado en favoritos de la sala.' : 'Reto quitado de favoritos.', 'success');
+            });
         }
 
         function renderList(container, items, emptyMessageHtml, templateFn) {
@@ -1126,7 +1325,11 @@
                 return !wasKnown || wasAvailable || isCurrent;
             });
 
-            return { ...base, availableCards, scores, history, currentCard, wildcardUsage };
+            return {
+                ...base, availableCards, scores, history, currentCard, wildcardUsage,
+                favorites: normalizeFavorites(previousSharedState?.favorites),
+                accessoriesEnabled: Boolean(previousSharedState?.accessoriesEnabled)
+            };
         }
 
         async function reconcileSharedDeck() {
@@ -1186,14 +1389,14 @@
                     return;
                 }
                 wildcardBtn.disabled = !canUseWildcard();
-                drawBtn.disabled = !roomReady || !localPlayerName || Boolean(gameState.currentCard || gameState.closedAt) || !isMyTurn();
+                drawBtn.disabled = !roomReady || !localPlayerName || Boolean(gameState.currentCard || gameState.closedAt) || !isMyTurn() || !hasCompatibleParticipantPair();
                 syncPresence();
             });
             if (!initialState || Number(initialState.deckVersion || 0) < 5) await prepareSharedGameState(initialState);
             await reconcileSharedDeck();
             roomReady = true;
             if (isPendingNewRoom) localStorage.removeItem('complices_pending_room');
-            drawBtn.disabled = !isOnline || !localPlayerName || Boolean(gameState.currentCard || gameState.closedAt) || !isMyTurn();
+            drawBtn.disabled = !isOnline || !localPlayerName || Boolean(gameState.currentCard || gameState.closedAt) || !isMyTurn() || !hasCompatibleParticipantPair();
             wildcardBtn.disabled = !canUseWildcard();
             syncPresence();
             gameRef.on('value', (snapshot) => {
@@ -1246,6 +1449,8 @@
                         turnDurationSeconds: Number(data.turnDurationSeconds) || TURN_DURATION_SECONDS,
                         scores: data.scores || {},
                         history: listFromFirebase(data.history),
+                        favorites: normalizeFavorites(data.favorites),
+                        accessoriesEnabled: Boolean(data.accessoriesEnabled),
                         currentCard: canonicalCardData(data.currentCard || null),
                         wildcardUsage: data.wildcardUsage || {},
                         closedAt: data.closedAt || null,
@@ -1292,7 +1497,12 @@
         function syncPresence() {
             if (!roomReady || !isOnline || !localPlayerName || !auth.currentUser) return;
             const myPresenceRef = presenceRef.child(auth.currentUser.uid);
-            const writePresence = () => myPresenceRef.set({ name: localPlayerName, ts: Date.now() }).catch(handleFirebaseError);
+            const writePresence = () => myPresenceRef.set({
+                name: localPlayerName,
+                ts: Date.now(),
+                sex: localSex || null,
+                orientation: localOrientation || null
+            }).catch(handleFirebaseError);
             if (!presenceDisconnectArmed) {
                 myPresenceRef.onDisconnect().remove().then(() => {
                     presenceDisconnectArmed = true;
@@ -1315,9 +1525,7 @@
             const pairModeOption = gameMode.querySelector('option[value="pareja"]');
             const needsGroupMode = activeEntries.length > 2;
             pairModeOption.disabled = needsGroupMode;
-            document.getElementById('gameModeHelp').textContent = needsGroupMode
-                ? `Hay ${activeEntries.length} participantes conectados. La sala usa Grupo; Pareja admite hasta 2.`
-                : 'Pareja admite hasta 2 participantes conectados; con 3 o más, la sala usa Grupo.';
+            updateGameModeHelp(activeEntries);
             if (needsGroupMode && gameMode.value === 'pareja') {
                 enforceGroupModeForRoom();
             }
@@ -1415,8 +1623,18 @@
 
             const maxLevel = Number(gameState.intensityLimit || 3);
             intensityLimit.value = String(maxLevel);
+            const profileComplete = Boolean(localSex && localOrientation);
+            profileStatus.textContent = profileComplete
+                ? (localSex === 'no-indicar' || localOrientation === 'no-indicar'
+                    ? 'Perfil guardado. No participarás en asignaciones aleatorias.'
+                    : 'Perfil guardado para esta sala; solo se asignarán participantes mutuamente compatibles.')
+                : 'Configura ambos campos para permitir asignaciones compatibles.';
+            saveProfileBtn.disabled = !localPlayerName || !roomReady || !isOnline;
+            updateGameModeHelp();
             const gameAlreadyStarted = Boolean(gameState.currentCard || gameState.history?.length || gameState.availableCards.length < TOTAL_CARDS);
             intensityLimit.disabled = gameAlreadyStarted || !roomReady || !isOnline;
+            accessoriesToggle.checked = Boolean(gameState.accessoriesEnabled);
+            accessoriesToggle.disabled = !roomReady || !isOnline || Boolean(gameState.closedAt);
             document.getElementById('intensityHelp').textContent = gameAlreadyStarted
                 ? 'La intensidad elegida queda fija durante esta partida. Reinicia para cambiarla.'
                 : 'Ajuste común para toda la sala. La ruleta conserva la progresión gradual dentro del máximo elegido.';
@@ -1455,6 +1673,9 @@
                 history,
                 `<p class="text-center text-slate-500 italic py-4">No hay cartas jugadas en el historial todavía.</p>`,
                 (item) => {
+                    const historyCard = resolveHistoryCard(item);
+                    const key = historyCard ? favoriteKey(historyCard) : '';
+                    const favorited = historyCard && isFavoriteCard(historyCard);
                     const statusBadge = item.status === "Finalizada" || item.status === "Compartida" || item.status === "Cumplida"
                         ? `<span class="text-emerald-400 font-bold">✅ Turno finalizado</span>`
                         : item.status === "Comodín usado"
@@ -1464,13 +1685,30 @@
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1">
                             <div class="flex justify-between text-[11px]">
                                 <span class="font-bold text-rose-500">${escapeHtml(item.player)}</span>
-                                ${statusBadge}
+                                <span class="flex items-center gap-2">${statusBadge}${historyCard ? `<button type="button" class="text-base leading-none ${favorited ? 'text-amber-300' : 'text-slate-500'}" data-history-favorite="${escapeHtml(key)}" aria-pressed="${Boolean(favorited)}" aria-label="${favorited ? 'Quitar de favoritos' : 'Guardar en favoritos'}">${favorited ? '⭐' : '☆'}</button>` : ''}</span>
                             </div>
                             <p class="font-semibold text-white">${escapeHtml(item.title)}</p>
                             <span class="text-[10px] text-slate-500">${escapeHtml(item.level)}</span>
                         </div>
                     `;
                 }
+            );
+
+            const favorites = Object.entries(normalizeFavorites(gameState.favorites));
+            renderList(
+                favoritesListContainer,
+                favorites,
+                `<p class="text-center text-slate-500 italic py-3">Todavía no hay retos favoritos.</p>`,
+                ([key, card]) => `
+                    <article class="rounded-xl border border-slate-800 bg-slate-950 p-3">
+                        <div class="flex items-start justify-between gap-3">
+                            <strong class="text-white">${escapeHtml(formatCardNumber(card))}. ${escapeHtml(card.title)}</strong>
+                            <button type="button" class="text-amber-300 text-base leading-none" data-remove-favorite="${escapeHtml(key)}" aria-label="Quitar ${escapeHtml(card.title)} de favoritos">⭐</button>
+                        </div>
+                        <p class="mt-1 text-slate-300 leading-relaxed">${escapeHtml(cardDescriptionForMode(card))}</p>
+                        <span class="mt-1 block text-[10px] text-slate-500">${escapeHtml(card.level || card.type || '')}</span>
+                    </article>
+                `
             );
 
             if (gameState.currentCard) {
@@ -1488,6 +1726,19 @@
                 cardLevel.textContent = card.level;
                 cardTitle.textContent = `${formatCardNumber(card)}. ${card.title}`;
                 cardDescription.textContent = cardDescriptionForMode(card);
+                const currentIsFavorite = isFavoriteCard(card);
+                currentFavoriteBtn.textContent = currentIsFavorite ? '⭐ Favorito' : '☆ Favorito';
+                currentFavoriteBtn.setAttribute('aria-label', currentIsFavorite ? 'Quitar carta de favoritos' : 'Guardar carta favorita');
+                currentFavoriteBtn.setAttribute('aria-pressed', String(currentIsFavorite));
+                currentFavoriteBtn.classList.remove('hidden');
+                if (gameMode.value === 'grupo' && card.executor && card.targetPlayer) {
+                    const executorName = typeof card.executor === 'string' ? card.executor : card.executor.name;
+                    const targetName = typeof card.targetPlayer === 'string' ? card.targetPlayer : card.targetPlayer.name;
+                    groupAssignmentBadge.textContent = `🎯 ${executorName || 'Participante'} ➔ ${targetName || 'Participante'}`;
+                    groupAssignmentBadge.classList.remove('hidden');
+                } else {
+                    groupAssignmentBadge.classList.add('hidden');
+                }
 
                 // Aplicar o quitar efecto visual excitante si es Nivel 3
                 if (card.type === "Nivel 3") {
@@ -1519,6 +1770,8 @@
                 cardArt.innerHTML = deckIllustrationMarkup('coqueteo', 'card');
                 cardContainer.classList.remove('card-high-voltage');
                 if (rouletteActive) return;
+                currentFavoriteBtn.classList.add('hidden');
+                groupAssignmentBadge.classList.add('hidden');
                 cardLevel.textContent = 'Presiona "Robar Carta"';
                 cardTitle.textContent = "¡Listo para comenzar!";
                 cardDescription.textContent = "Saca tu primera carta para empezar el juego grupal.";
@@ -1529,7 +1782,7 @@
                 stealCardBtn.disabled = true;
                 successBtn.disabled = true;
                 failBtn.disabled = true;
-                drawBtn.disabled = !roomReady || !isOnline || !localPlayerName || !isMyTurn() || Boolean(gameState.closedAt);
+                drawBtn.disabled = !roomReady || !isOnline || !localPlayerName || !isMyTurn() || !hasCompatibleParticipantPair() || Boolean(gameState.closedAt);
                 if (gameState.closedAt) { cardLevel.textContent = 'Partida cerrada'; cardTitle.textContent = 'La noche queda en el recuerdo'; cardDescription.textContent = 'Consulta o comparte el reporte de complicidad.'; }
             }
             paintTurnStatus();
@@ -1558,6 +1811,39 @@
             syncPresence();
             document.getElementById('tabGameButton').click();
             showToast(`¡Nombre guardado: ${name}!`, 'success');
+        });
+
+        saveProfileBtn.addEventListener('click', () => {
+            const sex = playerSex.value;
+            const orientation = playerOrientation.value;
+            if (!sex || !orientation) {
+                showToast('Selecciona sexo y orientación antes de guardar el perfil.', 'error');
+                return;
+            }
+            if (!localPlayerName) {
+                showToast('Guarda primero tu nombre para asociar el perfil a esta sala.', 'error');
+                playerNameInput.focus();
+                return;
+            }
+            if (!roomReady || !isOnline) {
+                showToast('Conecta la sala antes de guardar el perfil.', 'error');
+                return;
+            }
+            localSex = sex;
+            localOrientation = orientation;
+            localStorage.setItem(`${profileStoragePrefix}sex`, localSex);
+            localStorage.setItem(`${profileStoragePrefix}orientation`, localOrientation);
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                presences[uid] = {
+                    ...(presences[uid] && typeof presences[uid] === 'object' ? presences[uid] : {}),
+                    name: localPlayerName, ts: Date.now(), sex: localSex, orientation: localOrientation
+                };
+            }
+            syncPresence();
+            renderPresences();
+            renderUI();
+            showToast('Perfil guardado para esta sala.', 'success');
         });
 
         document.getElementById('addCustomCardBtn').addEventListener('click', () => {
@@ -1701,6 +1987,10 @@
                 showToast('No es tu turno. Espera a que el selector te habilite para girar.', 'info');
                 return;
             }
+            if (!hasCompatibleParticipantPair()) {
+                showToast('La ruleta requiere dos perfiles mutuamente compatibles. Revisen sexo y orientación en Ajustes.', 'info');
+                return;
+            }
             if (gameState.closedAt) { showToast('Esta partida ya fue cerrada. Reinicia la partida para volver a jugar.', 'info'); return; }
             if (gameState.availableCards.length === 0) {
                 showToast("Se agotaron las cartas. Reiniciá el mazo.", 'error');
@@ -1739,6 +2029,7 @@
                     rouletteActive = false;
                     updateGameState((state) => {
                         if (!state.availableCards || state.availableCards.length === 0 || state.currentCard || state.closedAt) return state;
+                        if (!hasCompatibleParticipantPair()) return state;
                         const cards = [...state.availableCards];
                         let selectedIndex = cards.findIndex(card => sameCard(card, winner));
                         if (selectedIndex < 0) {
@@ -1749,9 +2040,16 @@
                         const drawn = cards.splice(selectedIndex, 1)[0];
                         if (state.turnUid !== auth.currentUser?.uid) return;
                         const durationSeconds = inferDurationSeconds(drawn);
+                        const accessoryEligible = ['Nivel 2', 'Nivel 3'].includes(drawn.type);
+                        const accessoryModifier = state.accessoriesEnabled && accessoryEligible
+                            ? HOME_ACCESSORY_MODIFIERS[Math.floor(Math.random() * HOME_ACCESSORY_MODIFIERS.length)]
+                            : null;
+                        const assignment = randomGroupAssignment(state.gameMode || gameMode.value, auth.currentUser?.uid, localPlayerName);
+                        if ((state.gameMode || gameMode.value) === 'grupo' && (!assignment.executor || !assignment.targetPlayer)) return state;
                         state.availableCards = cards;
                         state.currentCard = {
                             ...drawn, drawnBy: localPlayerName, drawnByUid: auth.currentUser?.uid || null,
+                            ...assignment, accessoryModifier,
                             drawId: `${Date.now()}-${auth.currentUser?.uid || 'local'}`,
                             timer: durationSeconds ? { totalSeconds: durationSeconds, remainingSeconds: durationSeconds, status: 'ready', startedAt: null } : null
                         };
@@ -1777,6 +2075,8 @@
                     title: `${formatCardNumber(card)}. ${card.title}`,
                     level: card.level,
                     cardId: card.id,
+                    deckId: card.deckId || null,
+                    accessoryModifier: card.accessoryModifier || null,
                     type: card.type,
                     status: "Finalizada",
                     resolvedAt: sharedNow()
@@ -1806,6 +2106,8 @@
                     title: `${formatCardNumber(card)}. ${card.title}`,
                     level: card.level,
                     cardId: card.id,
+                    deckId: card.deckId || null,
+                    accessoryModifier: card.accessoryModifier || null,
                     type: card.type,
                     status: "Omitida",
                     resolvedAt: sharedNow()
@@ -1898,6 +2200,8 @@
                     title: `Comodín de Escape (canceló: ${activeCard.title})`,
                     level: 'Comodines',
                     cardId: activeCard.id,
+                    deckId: activeCard.deckId || null,
+                    accessoryModifier: activeCard.accessoryModifier || null,
                     status: 'Comodín usado',
                     resolvedAt: sharedNow()
                 }, ...listFromFirebase(state.history)];
@@ -1931,7 +2235,8 @@
                 const history = listFromFirebase(state.history);
                 if (state.currentCard) history.unshift({
                     player: localPlayerName || 'Sala', title: `${formatCardNumber(state.currentCard)}. ${state.currentCard.title}`,
-                    level: state.currentCard.level, cardId: state.currentCard.id, type: state.currentCard.type,
+                    level: state.currentCard.level, cardId: state.currentCard.id, deckId: state.currentCard.deckId || null,
+                    accessoryModifier: state.currentCard.accessoryModifier || null, type: state.currentCard.type,
                     status: 'Pendiente al cierre', resolvedAt: sharedNow()
                 });
                 return { ...state, history, currentCard: null, closedAt: sharedNow() };
@@ -1952,6 +2257,46 @@
         historyBtn.addEventListener('click', () => historyModal.classList.remove('hidden'));
         closeHistoryBtn.addEventListener('click', () => historyModal.classList.add('hidden'));
         closeHistoryFooter.addEventListener('click', () => historyModal.classList.add('hidden'));
+
+        currentFavoriteBtn.addEventListener('click', () => toggleFavorite(gameState.currentCard));
+        historyListContainer.addEventListener('click', event => {
+            const button = event.target.closest('[data-history-favorite]');
+            if (!button) return;
+            const key = button.dataset.historyFavorite;
+            const card = gameState.history.map(resolveHistoryCard).find(item => item && favoriteKey(item) === key);
+            if (card) toggleFavorite(card);
+        });
+        favoritesListContainer.addEventListener('click', event => {
+            const button = event.target.closest('[data-remove-favorite]');
+            if (!button) return;
+            const card = normalizeFavorites(gameState.favorites)[button.dataset.removeFavorite];
+            if (card) toggleFavorite(card);
+        });
+        accessoriesToggle.addEventListener('change', () => {
+            if (!roomReady || !isOnline) {
+                accessoriesToggle.checked = Boolean(gameState.accessoriesEnabled);
+                showToast('Conecta la sala antes de cambiar este ajuste.', 'info');
+                return;
+            }
+            const enabled = accessoriesToggle.checked;
+            let rejectionReason = '';
+            gameRef.transaction(state => {
+                if (!state || state.closedAt) {
+                    rejectionReason = 'La partida está cerrada.';
+                    return state;
+                }
+                state.accessoriesEnabled = enabled;
+                return state;
+            }, (error, committed, snapshot) => {
+                if (error) { accessoriesToggle.checked = Boolean(gameState.accessoriesEnabled); handleFirebaseError(error); return; }
+                if (!committed || Boolean(snapshot?.val()?.accessoriesEnabled) !== enabled) {
+                    accessoriesToggle.checked = Boolean(snapshot?.val()?.accessoriesEnabled);
+                    showToast(rejectionReason || 'No se pudo sincronizar el ajuste.', 'info');
+                    return;
+                }
+                showToast(enabled ? 'Accesorios caseros activados para próximos retos.' : 'Accesorios caseros desactivados.', 'success');
+            });
+        });
 
         viewDeckBtn.addEventListener('click', () => deckModal.classList.remove('hidden'));
         closeDeckBtn.addEventListener('click', () => deckModal.classList.add('hidden'));

@@ -1,5 +1,48 @@
 # Estado actual de Cómplices
 
+## Perfiles y asignación compatible — 2/11/2026
+
+- Se agregaron en Ajustes los campos Sexo (Hombre, Mujer o Prefiero no indicar) y Orientación (Heterosexual, Bisexual, Gay/lesbiana, Pansexual, Abierta a cualquier género o Prefiero no indicar). Deben guardarse con un nombre de jugador y una sala conectada.
+- Las preferencias se recuerdan en el almacenamiento local del dispositivo por código de sala y se comparten temporalmente en `salas/{codigo}/presences/{uid}` junto con el nombre y timestamp. Los demás miembros conectados pueden verlas; `onDisconnect` elimina el nodo al desconectarse. No se modificaron reglas RTDB.
+- El giro requiere que existan dos participantes con preferencias mutuamente compatibles; la compatibilidad se comprueba en ambos sentidos. En modo Grupo el sorteo elige al azar un par compatible de personas y asigna executor/destinatario. Perfiles incompletos o con «Prefiero no indicar» no se incluyen. El filtro está en el cliente y no es una garantía del servidor.
+- Limitación: no existe una relación de parejas en el esquema. El sorteo selecciona participantes individuales; no puede determinar cuál es «la otra pareja» ni validar una asignación de pareja completa.
+- `index5-final-v4.html` se sincronizó con `web/index.html` y `android-app/app/src/main/assets/index.html`; SHA-256 idéntico en los tres: `BC8CE01A190E08AD81ADCE1B57F092E1E8D905A7E629F3EB521C661774869C9E`.
+- Se publicó únicamente `hosting:complices` en el proyecto `juego-cruzado`. Firebase confirmó el release; verificación HTTP posterior del dominio `complices-en-juego.web.app`: 200 y contiene ambos selectores y la función de compatibilidad. No se desplegaron reglas, Functions ni el sitio legado.
+- Android avanzó a 1.22 (`versionCode 23`), conservando `applicationId com.chispa.app`, `compileSdk 37`, `minSdk 23` y `targetSdk 35`. `assembleDebug` con Gradle 9.7.1/JBR 25 terminó `BUILD SUCCESSFUL`. APK debug: `Complices-1.22-debug.apk` (1 559 812 bytes; SHA-256 `9DD063C0D042AA7278AE29DD3E2FAF53BC7B0732347601B17A81C1B7240A3264`). `aapt` confirma package/versionName/versionCode.
+- Validaciones ejecutadas: `node --check` del script inline, `git diff --check`, hashes idénticos de las tres copias HTML, compilación y lectura HTTP. `adb install -r` instaló la 1.22 en Edge 40 Pro; `dumpsys package` confirmó versionCode 23 y la Activity abrió la puerta de edad. El chequeo inicial de logcat no mostró excepciones fatales. No se validó la pantalla posterior ni el flujo de perfiles porque quedó pendiente la confirmación de mayoría de edad en el dispositivo. Edge 40 Neo no estaba conectado y no se hicieron pruebas multi-dispositivo.
+- Pendiente recomendado: conectar el Neo y confirmar mayoría de edad en cada teléfono; usar una sala desechable para revisar perfiles heterosexuales, gay/lesbiana, bi/pan, incompletos y modo Pareja con más de dos participantes. Revisar además que el filtro de cliente no sustituye validación de servidor.
+
+## Asignaciones, favoritos y accesorios — 2/11/2026
+
+- El cliente activo usa `salas/{codigo}/gameData` y `salas/{codigo}/presences`; las rutas `partida/...` del pedido no corresponden a este proyecto y no se cambiaron.
+- En modo Grupo, el sorteo incorpora `currentCard.executor` y `currentCard.targetPlayer` desde presencias con timestamp vigente; selecciona dos UID distintos y los muestra como distintivo en la carta. La sala no contiene una relación entre jugadores por pareja, así que el destinatario es individual, no una pareja inferida.
+- `gameData.favorites` es un objeto compartido por la sala. La estrella de la carta activa y del historial usa una transacción en `gameRef`; la sección de favoritos se actualiza desde el listener común. Reiniciar la partida inicializa favoritos vacíos.
+- Ajustes incluye `accessoriesEnabled`, sincronizado en `gameData`. Cuando está activo, el sorteo puede adjuntar una sugerencia aleatoria de accesorio solo a Nivel 2/3; el modificador queda en `currentCard.accessoryModifier` y la UI compone el mismo texto en cada cliente. Se apaga al reiniciar.
+- `assembleDebug` terminó con Gradle 9.7.1/JBR 25: BUILD SUCCESSFUL. APK generada en `android-app/app/build/outputs/apk/debug/app-debug.apk` (1 593 067 bytes; SHA-256 `DDF1A6DDA6EA9A5568C631BCBD1C917375347030D7A3DE5658D7389AFCF0A485`), versión 1.21 / `versionCode 22`. Aún no se instaló esta APK ni se publicó Hosting. No se ejecutaron pruebas interactivas o escrituras RTDB; no se desplegaron reglas. Requiere validación en sala desechable antes de publicar.
+
+## Logo integrado con el fondo — 2/11/2026
+
+- La imagen anterior tenía un patrón cuadriculado opaco que aparecía como un rectángulo en el encabezado. Se generó `complices-logo-banner-blended.png` conservando los trazos del logo y convirtiendo el fondo cuadriculado y las áreas oscuras de la silueta en transparencia, para que se vea el fondo bordó de la app a través de ellos. El PNG original se conserva como fuente.
+- El HTML canónico referencia el PNG integrado y se sincronizaron ambas copias para Hosting y Android. SHA-256 idéntico en los tres HTML: `02A59A604D13B2C63BEBA630EBC6C1231FF4A12058FD84490BA01BEFA5EB8A43`; el PNG web/Android también coincide.
+- Gradle 9.7.1/JBR 25 `assembleDebug`: BUILD SUCCESSFUL. APK 1.21 (`versionCode 22`) instalada en Edge 40 Pro. APK: `Complices-1.21-logo-integrado-debug.apk`, SHA-256 `CC52C3B1C3C092D5048961FF0B27B47311DFCB2C6B34D54CBF58FF4DF1FCEE5E`. No se pudo verificar la vista en el dispositivo porque estaba bloqueado.
+- Hosting `complices-en-juego` recibió exclusivamente `firebase deploy --only hosting:complices --project juego-cruzado`. Verificación posterior: HTML HTTP 200 referencia el PNG nuevo y no referencia el anterior; imagen HTTP 200, bytes iguales al recurso local (`197133` bytes, SHA-256 coincidente). Sin cambios a reglas, Functions o target legado.
+
+## Imagen del encabezado web y APK — 2/11/2026
+
+- Se reemplazó el logo SVG anterior del encabezado por la imagen elegida por el usuario, guardada como `web/complices-logo-banner.png` y `android-app/app/src/main/assets/complices-logo-banner.png`. Se ajustó su ancho responsivo manteniendo la proporción para móvil y escritorio.
+- `index5-final-v4.html` es la fuente canónica; se sincronizaron `web/index.html` y `android-app/app/src/main/assets/index.html`. Los tres SHA-256 coinciden (`EFD487C9BA4FC4F56FDDE87DCD7BF9C8BF54F943CC73E022FB4A8DB95DE68399`); los PNG web/Android también coinciden (`1EFAD8BF211DFD6748E11CCE743486FBD78EDA57C5EFBF9A7F542C7250AC7504`).
+- `assembleDebug` terminó correctamente con Gradle 9.7.1 y Android Studio JBR 25. La APK 1.21 (`versionCode 22`) se instaló en el Edge 40 Pro; el teléfono estaba bloqueado al intentar capturar el encabezado, así que la vista final aún no se verificó visualmente. APK local: `Complices-1.21-banner-compartido-debug.apk` (SHA-256 `3C7F593106DC52B947E91D77DEDF585260AE274FF3B738F9EBBD95FB5BCFE8B5`).
+- Tras el reporte del usuario de que seguía viendo la versión vieja, se publicó `firebase deploy --only hosting:complices --project juego-cruzado` (solo el sitio `complices-en-juego`; sin reglas, Functions ni target legado). Verificación HTTP posterior: HTML 200 contiene `complices-logo-banner.png` y ya no referencia el SVG anterior del encabezado; el PNG respondió 200, 157647 bytes, `image/png`.
+- Firebase y el icono de launcher no se modificaron en esta publicación. Sin commit ni push; el cambio permanece local además de estar publicado.
+
+## Icono Android actualizado — 2/11/2026
+
+- Se reemplazó el recurso activo de launcher por una adaptación cuadrada de la imagen elegida por el usuario. El PNG está en `android-app/app/src/main/res/drawable-nodpi/complices_launcher.png` y se referencia tanto desde el adaptive icon (Android 8+) como desde el fallback (API 23–25). Se conservan el nombre de paquete y la versión 1.21 (`versionCode 22`).
+- El lienzo previo `ic_complices_foreground.xml` permanece en el proyecto como recurso sin uso. `assembleDebug` terminó con Gradle 9.7.1 y Android Studio JBR 25; APK resultante: `android-app/app/build/outputs/apk/debug/app-debug.apk` y copia local `Complices-1.21-icono-personalizado-debug.apk` (SHA-256 `CC4EC85EE5E62036BB11CBE2C2CF84BAFCEC59CAA3000E4A554356E3D6D8C55F`).
+- Se instaló con `adb install -r` en el Motorola Edge 40 Pro; `dumpsys package` confirma 1.21/22. La captura del cajón de aplicaciones muestra el nombre y la imagen elegida sin recorte. No se conectó el Edge 40 Neo.
+- No se modificaron el HTML, el icono web, Firebase ni Hosting. Esta es una APK debug; no se produjo una APK firmada de distribución. El cambio sigue local y sin commit/push.
+
+
 Fecha: 31 de octubre de 2026. Esta nota registra cambios y verificaciones realizados en el checkout local; no sustituye la comprobación de la versión remota.
 
 ## Estado verificado
