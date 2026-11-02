@@ -118,3 +118,14 @@ Validaciones locales completadas para 1.21: `node --check` del JavaScript inline
 - Gradle 9.7.1/JBR 25: `assembleDebug` completó correctamente. La APK 1.21 (`versionCode 22`, `minSdk 23`, `targetSdk 35`) se reinstaló en ambos Motorola; `dumpsys package` confirmó los metadatos en cada uno. Artefactos: `android-app/app/build/outputs/apk/debug/app-debug.apk` y copia local `Complices-1.21-debug.apk` (no subir a Git).
 - Firebase CLI confirmó el despliegue selectivo del target `hosting:complices` en `juego-cruzado`; el sitio `https://complices-en-juego.web.app/` respondió HTTP 200 y su HTML contiene la interfaz vigente y «Robar este reto». No se desplegaron reglas, Functions ni el target legado.
 - No se modificaron reglas RTDB ni se borraron salas. Las capturas de QA y `firepit-log.txt` se mantienen locales y fuera de Git.
+
+## Identidad visual Cómplices — 2/11/2026
+
+- Estado inicial: rama `main` en `a16ab32` (`Release Complices 1.21`), alineada con `origin/main`; el ZIP de marca, capturas y logs QA ya estaban locales y se preservaron. El cambio está destinado a `main`; no se subieron ZIP, APK, capturas, logs ni credenciales.
+- El HTML canónico muestra `web/complices-logo-transparent.svg` como logo del encabezado, sin repetir el nombre, y `web/complices-icon.svg` como favicon. `web/complices-logo.svg` queda como recurso de marca completo. Las tres copias HTML son idénticas; SHA-256 `52E3F3163606DA6DC85659C890F37D02F92609A2A825A0ADDA15C3CC507BA12B`.
+- Android declara `@mipmap/ic_complices` como `icon` y `roundIcon`, con adaptive icon, fondo `#24151D` y fallback para API 23–25. Se mantuvieron `versionName 1.21`, `versionCode 22` y `applicationId com.chispa.app`.
+- `assembleDebug` completó con Gradle 9.7.1/JBR 25 y compileSdk 37. APK: `android-app/app/build/outputs/apk/debug/app-debug.apk` y `Complices-1.21-branding-debug.apk` (979217 bytes). `aapt` confirmó paquete, versión e icono.
+- Se instaló por ADB en Motorola Edge 40 Pro; `dumpsys package` confirmó 1.21/22. La captura del WebView mostró el logo en el encabezado y subtítulo sin solaparse. No se validó visualmente el recorte del icono por máscaras del launcher. El Edge 40 Neo no estaba conectado.
+- La app quedó tras la pantalla de edad y luego el teléfono mostró el panel de notificaciones; no se completó un giro de carta ni una prueba de flujo interactivo en ese dispositivo. La captura del encabezado sí es evidencia del recurso renderizado en WebView.
+- Firebase CLI publicó únicamente `hosting:complices`. HTTP 200 verificado en `/`, `/complices-logo-transparent.svg`, `/complices-icon.svg` y `/complices-logo.svg`; el HTML referencia tanto logo como favicon. No se hizo una sesión visual/funcional en navegador porque el helper de activación de Chrome falló dos veces.
+- No se modificaron reglas RTDB, Functions ni otros targets. El commit/push a GitHub `main` de esta versión se verificará al final de la tarea.
