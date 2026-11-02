@@ -11,6 +11,7 @@
 - Android avanzó a 1.22 (`versionCode 23`), conservando `applicationId com.chispa.app`, `compileSdk 37`, `minSdk 23` y `targetSdk 35`. `assembleDebug` con Gradle 9.7.1/JBR 25 terminó `BUILD SUCCESSFUL`. APK debug: `Complices-1.22-debug.apk` (1 559 812 bytes; SHA-256 `9DD063C0D042AA7278AE29DD3E2FAF53BC7B0732347601B17A81C1B7240A3264`). `aapt` confirma package/versionName/versionCode.
 - Validaciones ejecutadas: `node --check` del script inline, `git diff --check`, hashes idénticos de las tres copias HTML, compilación y lectura HTTP. `adb install -r` instaló la 1.22 en Edge 40 Pro; `dumpsys package` confirmó versionCode 23 y la Activity abrió la puerta de edad. El chequeo inicial de logcat no mostró excepciones fatales. No se validó la pantalla posterior ni el flujo de perfiles porque quedó pendiente la confirmación de mayoría de edad en el dispositivo. Edge 40 Neo no estaba conectado y no se hicieron pruebas multi-dispositivo.
 - Pendiente recomendado: conectar el Neo y confirmar mayoría de edad en cada teléfono; usar una sala desechable para revisar perfiles heterosexuales, gay/lesbiana, bi/pan, incompletos y modo Pareja con más de dos participantes. Revisar además que el filtro de cliente no sustituye validación de servidor.
+- GitHub: los cambios de Cómplices 1.22 y recursos activos se subieron a `origin/main` en `605b8c8` (`feat: add compatible participant profiles (1.22)`). Se excluyeron APK, ZIP, logs y capturas locales; no se borró ninguno.
 
 ## Asignaciones, favoritos y accesorios — 2/11/2026
 
