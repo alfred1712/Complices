@@ -125,6 +125,14 @@
         body .text-sm { font-size:16px!important;line-height:1.5!important; }
         body [class~="text-[9px]"],body [class~="text-[10px]"],body [class~="text-[11px]"] { font-size:13px!important;line-height:1.45!important; }
         .audio-slider { width:100%;accent-color:#d6b36a;min-height:28px; }
+        .settings-group { background:#261820;border:1px solid #604339;border-radius:14px;margin-bottom:10px;overflow:hidden; }
+        .settings-group > summary { display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:54px;padding:12px 15px;cursor:pointer;color:#f1dfb1;font-size:15px;font-weight:800;list-style:none; }
+        .settings-group > summary::-webkit-details-marker { display:none; }
+        .settings-group > summary::after { content:'＋';color:#d6b36a;font-size:17px;line-height:1; }
+        .settings-group[open] > summary { border-bottom:1px solid #604339; }
+        .settings-group[open] > summary::after { content:'−'; }
+        .settings-summary-note { margin-left:auto;text-align:right;color:#c5a985;font-size:11px;font-weight:500; }
+        .settings-group-body { padding:12px 14px 14px; }
         .challenge-timer { display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #765038;border-radius:12px;padding:9px 12px;margin-top:12px;background:#160f16; }
         .challenge-timer.hidden { display:none!important; }
         #timerDisplay { color:#f1dfb1;font:700 22px Georgia,serif;font-variant-numeric:tabular-nums;letter-spacing:.08em; }
@@ -226,75 +234,86 @@
         </section>
 
         <section id="roomTab" class="app-tab-panel hidden" role="tabpanel" aria-labelledby="tabRoomButton">
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-3">Código de la sala</h2>
-                <p class="text-xs text-slate-400 mb-3">Comparte la invitación para que los demás entren a esta misma partida desde sus dispositivos, o ingresa el código de 12 caracteres.</p>
-                <div class="flex flex-wrap justify-center items-center gap-2">
-                    <span id="roomLabel" class="text-xs text-slate-300 font-bold">Sala: conectando…</span>
-                    <input id="roomCodeInput" maxlength="12" placeholder="Código de sala" aria-label="Código de sala" class="w-32 bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-xs uppercase">
-                    <button id="joinRoomBtn" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-rose-300">Usar sala</button>
+            <details id="playerProfileSettings" class="settings-group">
+                <summary><span>👤 Perfil y preferencias</span><span id="profileSummary" class="settings-summary-note">Completar perfil</span></summary>
+                <div class="settings-group-body space-y-3">
+                    <div id="setupBox" class="space-y-2">
+                        <label for="playerNameInput" class="block text-xs font-bold text-amber-100">Nombre en este teléfono</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="playerNameInput" placeholder="Tu nombre" aria-label="Tu nombre de jugador" class="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-rose-500">
+                            <button id="savePlayerBtn" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2 rounded-lg">Guardar</button>
+                        </div>
+                        <p id="currentPlayerDisplay" class="text-xs text-rose-300 font-semibold">Jugador en este teléfono: Ninguno configurado</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="block text-xs text-slate-200">Sexo
+                            <select id="playerSex" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
+                                <option value="">Seleccionar…</option><option value="hombre">Hombre</option><option value="mujer">Mujer</option><option value="no-indicar">Prefiero no indicar</option>
+                            </select>
+                        </label>
+                        <label class="block text-xs text-slate-200">Orientación
+                            <select id="playerOrientation" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
+                                <option value="">Seleccionar…</option><option value="heterosexual">Heterosexual</option><option value="bisexual">Bisexual</option><option value="gay">Gay / lesbiana</option><option value="pansexual">Pansexual</option><option value="abierta">Abierta · cualquier género</option><option value="no-indicar">Prefiero no indicar</option>
+                            </select>
+                        </label>
+                    </div>
+                    <button id="saveProfileBtn" type="button" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-100">Guardar perfil de esta sala</button>
+                    <p id="profileStatus" class="text-[11px] text-slate-400" role="status" aria-live="polite">Configura ambos campos para permitir asignaciones compatibles.</p>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">El perfil se sincroniza como presencia temporal y lo ven los participantes de esta sala. Si eliges «Prefiero no indicar», no entrarás en asignaciones aleatorias.</p>
                 </div>
-                <button id="createRoomBtn" class="w-full mt-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-amber-200">📤 Compartir invitación</button>
-                <button id="newRoomBtn" class="w-full mt-2 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">✨ Crear una sala nueva</button>
-            </div>
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Intensidad máxima</h2>
-                <select id="intensityLimit" aria-label="Intensidad máxima de las cartas" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100">
-                    <option value="1">Suave · hasta Nivel 1</option>
-                    <option value="2">Media · hasta Nivel 2</option>
-                    <option value="3">Completa · hasta Nivel 3</option>
-                </select>
-                <p id="intensityHelp" class="text-[11px] text-slate-400 mt-2 leading-relaxed">La ruleta elige al azar entre los niveles habilitados y aumenta la intensidad gradualmente. Es un ajuste común para toda la sala y se fija al comenzar.</p>
-            </div>
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <label for="accessoriesToggle" class="flex items-center justify-between gap-3 text-sm font-bold text-amber-100">
-                    <span>🎛️ Modo Accesorios Caseros</span>
-                    <input id="accessoriesToggle" type="checkbox" class="h-5 w-5 accent-amber-500" aria-describedby="accessoriesHelp">
-                </label>
-                <p id="accessoriesHelp" class="text-[11px] text-slate-400 mt-2 leading-relaxed">Añade a algunos retos de Nivel 2 y 3 una sugerencia aleatoria de objeto cotidiano. El modificador queda guardado en la carta para que toda la sala vea el mismo texto.</p>
-            </div>
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Volumen de audio</h2>
-                <label for="sfxVolume" class="block text-xs text-slate-200 mt-2">Efectos de sonido <span id="sfxVolumeValue">70%</span></label>
-                <input id="sfxVolume" class="audio-slider" type="range" min="0" max="100" value="70" aria-label="Volumen de los efectos de sonido">
-                <p class="text-xs text-slate-400 mt-1">El ambiente musical está desactivado. Los efectos son opcionales; los botones físicos controlan el volumen general.</p>
-            </div>
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Cartas de la sala</h2>
-                <p class="text-[11px] text-slate-400 mb-3">Agreguen retos propios antes de girar. Se mezclan en el nivel elegido y no muestran quién los escribió. El texto queda en Firebase y es visible para los miembros de esta sala.</p>
-                <label for="customCardLevel" class="block text-[10px] text-amber-100 mb-1">Nivel del reto</label>
-                <select id="customCardLevel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs mb-2">
-                    <option value="1">Nivel 1 · Coqueteo</option><option value="2">Nivel 2 · Sensaciones</option><option value="3">Nivel 3 · Intimidad</option>
-                </select>
-                <textarea id="customCardText" maxlength="240" rows="3" placeholder="Escribe un reto para esta sala (máximo 240 caracteres)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 resize-y"></textarea>
-                <div class="flex items-center justify-between gap-2 mt-2"><span id="customCardCount" class="text-[10px] text-slate-500">0 / 12 retos propios</span><button id="addCustomCardBtn" type="button" class="bg-rose-700 px-3 py-2 rounded-lg text-xs font-bold text-white">＋ Agregar reto</button></div>
-            </div>
-            <div id="setupBox" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-3">Tu nombre en este teléfono</h2>
-                <div class="flex gap-2">
-                    <input type="text" id="playerNameInput" placeholder="Tu nombre" aria-label="Tu nombre de jugador" class="flex-1 min-w-0 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-rose-500">
-                    <button id="savePlayerBtn" class="bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold px-4 py-2 rounded-lg">Guardar</button>
+            </details>
+            <details class="settings-group">
+                <summary><span>🏠 Sala e invitaciones</span><span class="settings-summary-note">Código y acceso</span></summary>
+                <div class="settings-group-body space-y-2">
+                    <p class="text-xs text-slate-400">Comparte la invitación para que otros entren a esta partida o ingresa un código de 12 caracteres.</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="roomLabel" class="text-xs text-slate-300 font-bold">Sala: conectando…</span>
+                        <input id="roomCodeInput" maxlength="12" placeholder="Código de sala" aria-label="Código de sala" class="w-32 bg-slate-950 border border-slate-700 rounded-lg px-2 py-2 text-xs uppercase">
+                        <button id="joinRoomBtn" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-rose-300">Usar sala</button>
+                    </div>
+                    <button id="createRoomBtn" class="w-full bg-slate-800 border border-slate-800 rounded-lg px-3 py-2.5 text-xs text-amber-200">📤 Compartir invitación</button>
+                    <button id="newRoomBtn" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300">✨ Crear una sala nueva</button>
                 </div>
-                <p id="currentPlayerDisplay" class="text-xs text-rose-300 mt-3 font-semibold">Jugador en este teléfono: Ninguno configurado</p>
-            </div>
-            <div class="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 mb-4">
-                <h2 class="text-sm font-bold text-amber-200 uppercase tracking-wider mb-2">Perfil para asignar retos</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label class="block text-xs text-slate-200">Sexo
-                        <select id="playerSex" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
-                            <option value="">Seleccionar…</option><option value="hombre">Hombre</option><option value="mujer">Mujer</option><option value="no-indicar">Prefiero no indicar</option>
-                        </select>
-                    </label>
-                    <label class="block text-xs text-slate-200">Orientación
-                        <select id="playerOrientation" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs">
-                            <option value="">Seleccionar…</option><option value="heterosexual">Heterosexual</option><option value="bisexual">Bisexual</option><option value="gay">Gay / lesbiana</option><option value="pansexual">Pansexual</option><option value="abierta">Abierta · cualquier género</option><option value="no-indicar">Prefiero no indicar</option>
-                        </select>
-                    </label>
+            </details>
+            <details class="settings-group">
+                <summary><span>🎛️ Intensidad y accesorios</span><span id="gameSettingsSummary" class="settings-summary-note">Hasta Nivel 3</span></summary>
+                <div class="settings-group-body space-y-3">
+                    <label for="intensityLimit" class="block text-xs font-bold text-amber-100">Intensidad máxima</label>
+                    <select id="intensityLimit" aria-label="Intensidad máxima de las cartas" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-slate-100">
+                        <option value="1">Suave · hasta Nivel 1</option>
+                        <option value="2">Media · hasta Nivel 2</option>
+                        <option value="3">Completa · hasta Nivel 3</option>
+                    </select>
+                    <p id="intensityHelp" class="text-[11px] text-slate-400 leading-relaxed">La ruleta elige al azar entre los niveles habilitados y aumenta la intensidad gradualmente. Es un ajuste común para toda la sala y se fija al comenzar.</p>
+                    <div class="border-t border-slate-700 pt-3">
+                        <label for="accessoriesToggle" class="flex items-center justify-between gap-3 text-sm font-bold text-amber-100">
+                            <span>Modo Accesorios Caseros</span>
+                            <input id="accessoriesToggle" type="checkbox" class="h-5 w-5 accent-amber-500" aria-describedby="accessoriesHelp">
+                        </label>
+                        <p id="accessoriesHelp" class="text-[11px] text-slate-400 mt-1 leading-relaxed">Añade una sugerencia de objeto cotidiano a algunos retos de Nivel 2 y 3.</p>
+                    </div>
                 </div>
-                <button id="saveProfileBtn" type="button" class="w-full mt-3 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-amber-100">Guardar perfil de esta sala</button>
-                <p id="profileStatus" class="text-[11px] text-slate-400 mt-2" role="status" aria-live="polite">Configura ambos campos para permitir asignaciones compatibles.</p>
-                <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">El perfil se sincroniza como presencia temporal y lo ven los participantes de esta sala. Si eliges «Prefiero no indicar», no entrarás en asignaciones aleatorias.</p>
-            </div>
+            </details>
+            <details class="settings-group">
+                <summary><span>🔊 Audio</span><span id="audioSettingsSummary" class="settings-summary-note">Efectos apagados</span></summary>
+                <div class="settings-group-body">
+                    <label for="sfxVolume" class="block text-xs text-slate-200">Volumen de los efectos <span id="sfxVolumeValue">70%</span></label>
+                    <input id="sfxVolume" class="audio-slider" type="range" min="0" max="100" value="70" aria-label="Volumen de los efectos de sonido">
+                    <p class="text-xs text-slate-400 mt-1">La música ambiente está desactivada. El volumen general se controla con los botones del teléfono.</p>
+                </div>
+            </details>
+            <details class="settings-group">
+                <summary><span>🃏 Cartas propias</span><span id="customCardSummary" class="settings-summary-note">0 / 12</span></summary>
+                <div class="settings-group-body">
+                    <p class="text-[11px] text-slate-400 mb-3">Agrega retos antes de girar. Se mezclan en el nivel elegido y los ve todo el grupo de la sala.</p>
+                    <label for="customCardLevel" class="block text-xs text-amber-100 mb-1">Nivel del reto</label>
+                    <select id="customCardLevel" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs mb-2">
+                        <option value="1">Nivel 1 · Coqueteo</option><option value="2">Nivel 2 · Sensaciones</option><option value="3">Nivel 3 · Intimidad</option>
+                    </select>
+                    <textarea id="customCardText" maxlength="240" rows="2" placeholder="Escribe un reto para esta sala (máximo 240 caracteres)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 resize-y"></textarea>
+                    <div class="flex items-center justify-between gap-2 mt-2"><span id="customCardCount" class="text-[10px] text-slate-500">0 / 12 retos propios</span><button id="addCustomCardBtn" type="button" class="bg-rose-700 px-3 py-2 rounded-lg text-xs font-bold text-white">＋ Agregar reto</button></div>
+                </div>
+            </details>
             <p class="text-[11px] text-center text-slate-500 leading-relaxed">Solo mayores de 18. Se puede pasar cualquier carta sin explicaciones ni penalización.</p>
         </section>
 
@@ -980,6 +999,7 @@
             sfxToggle.setAttribute('aria-pressed', String(soundEnabled));
             sfxVolumeSlider.value = String(Math.round(sfxVolume * 100));
             document.getElementById('sfxVolumeValue').textContent = `${Math.round(sfxVolume * 100)}%`;
+            document.getElementById('audioSettingsSummary').textContent = `${soundEnabled ? 'Efectos activos' : 'Efectos apagados'} · ${Math.round(sfxVolume * 100)}%`;
         }
         sfxVolumeSlider.addEventListener('input', () => {
             sfxVolume = Number(sfxVolumeSlider.value) / 100;
@@ -1629,6 +1649,10 @@
                     ? 'Perfil guardado. No participarás en asignaciones aleatorias.'
                     : 'Perfil guardado para esta sala; solo se asignarán participantes mutuamente compatibles.')
                 : 'Configura ambos campos para permitir asignaciones compatibles.';
+            document.getElementById('profileSummary').textContent = !localPlayerName
+                ? 'Configurar nombre'
+                : (profileComplete ? 'Perfil listo' : 'Completar preferencias');
+            document.getElementById('gameSettingsSummary').textContent = `Hasta Nivel ${maxLevel}`;
             saveProfileBtn.disabled = !localPlayerName || !roomReady || !isOnline;
             updateGameModeHelp();
             const gameAlreadyStarted = Boolean(gameState.currentCard || gameState.history?.length || gameState.availableCards.length < TOTAL_CARDS);
@@ -1647,7 +1671,9 @@
 
             const allPlayers = Object.keys(scores);
             wildcardBtn.disabled = !canUseWildcard();
-            document.getElementById('customCardCount').textContent = `${listFromFirebase(gameState.customCards).length} / 12 retos propios`;
+            const customCardCountValue = listFromFirebase(gameState.customCards).length;
+            document.getElementById('customCardCount').textContent = `${customCardCountValue} / 12 retos propios`;
+            document.getElementById('customCardSummary').textContent = `${customCardCountValue} / 12`;
             document.getElementById('addCustomCardBtn').disabled = !roomReady || !isOnline || Boolean(gameState.currentCard || gameState.history?.length || gameState.closedAt) || listFromFirebase(gameState.customCards).length >= 12;
             paintChallengeTimer();
             maybeShowSummary();

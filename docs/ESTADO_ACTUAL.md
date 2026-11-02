@@ -1,5 +1,16 @@
 # Estado actual de Cómplices
 
+## Ajustes compactos y prueba Web–APK — 1.23 (2/11/2026)
+
+- Estado inicial verificado: rama `main`, alineada con `origin/main` en `96149d4`; los cambios de interfaz 1.23 estaban locales y sin confirmar. Se preservaron los archivos locales sin seguimiento (capturas, log y ZIP); no se agregaron al commit.
+- La pestaña Ajustes ahora agrupa controles existentes en cinco secciones desplegables: Perfil y preferencias, Sala e invitaciones, Intensidad y accesorios, Audio y Cartas propias. Los resúmenes muestran estado compacto (perfil, nivel máximo, audio/volumen y contador de cartas). Se conservaron los IDs y las funciones de los controles.
+- Se actualizó Android a 1.23 (`versionCode 24`), sin cambiar `applicationId com.chispa.app`, `minSdk 23` ni `targetSdk 35`. APK debug: `Complices-1.23-debug.apk`, 1 508 417 bytes, SHA-256 `6909333F93FD52F4DC088E0AD06023444267E0D87D84057D0AC5B05D89AFE707`. `aapt` confirmó package/version/SDK; `assembleDebug` completó con Gradle 9.7.1/JBR 25. El APK se instaló en Edge 40 Pro y se confirmó versionCode 24/versionName 1.23 con `dumpsys package`.
+- Prueba real en sala desechable `9AUQ2ANCHVP2`: Edge 40 Pro (Alfred) y navegador (Web prueba) aparecieron en línea. El perfil guardado desde el navegador se reflejó en presencia; ambos eran compatibles para el modo Pareja. El usuario web giró la ruleta y el Pro mostró la misma carta 068 «Toma mi mano»; al finalizar desde la web, el estado compartido avanzó el turno a Alfred y el Pro indicó «Tu turno para girar». Esta prueba confirma giro, carta activa y cambio de turno entre Web y APK, no todos los flujos del juego.
+- La vista de Ajustes compacta se revisó en el navegador y en captura del Pro; la sección de perfil pudo abrirse, guardar y mostrar su resumen. El navegador recibió el sitio publicado y devolvió HTTP 200. Firebase Hosting se publicó solo al target `hosting:complices` del proyecto existente; no se desplegaron reglas ni Functions.
+- Validaciones: `node --check` del script inline, `git diff --check`, SHA-256 idéntico en `index5-final-v4.html`, `web/index.html` y `android-app/app/src/main/assets/index.html` (`A122D51E27542CC5168A1EF49D113D52AB249CF9D7BAA913F87E98EBFBD95E1F`), compilación y metadatos APK.
+- Límites: no se probó el Edge 40 Neo; tampoco se ejecutó la matriz de incompatibilidad de perfiles, modo Grupo, comodines, favoritos o cartas personalizadas. La sala QA es desechable y quedó sin borrar; no se usó una sala de juego personal. La APK es de depuración, no una APK firmada para distribución pública.
+- Estado Git al documentar: cambios de código y este registro pendientes de commit/push. Mantener fuera de Git el APK, capturas, ZIP y logs preexistentes.
+
 ## Perfiles y asignación compatible — 2/11/2026
 
 - Se agregaron en Ajustes los campos Sexo (Hombre, Mujer o Prefiero no indicar) y Orientación (Heterosexual, Bisexual, Gay/lesbiana, Pansexual, Abierta a cualquier género o Prefiero no indicar). Deben guardarse con un nombre de jugador y una sala conectada.
